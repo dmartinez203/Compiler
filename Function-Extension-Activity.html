@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compiler Extension: Adding Function Support</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        h2 {
+            color: #2c3e50;
+            font-size: 2em;
+            margin: 30px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        h3 {
+            color: #34495e;
+            font-size: 1.5em;
+            margin: 25px 0 15px 0;
+            padding-left: 10px;
+            border-left: 4px solid #764ba2;
+        }
+
+        .intro-box {
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .learning-objectives {
+            background: #e8f4f8;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .learning-objectives ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .learning-objectives li {
+            padding: 8px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .learning-objectives li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .task-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .task-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .task-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .task-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+
+        .task-title {
+            font-size: 1.4em;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+
+        .file-badge {
+            display: inline-block;
+            background: #34495e;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            margin: 5px 5px 5px 0;
+        }
+
+        .subtask {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #764ba2;
+            border-radius: 4px;
+        }
+
+        .subtask h4 {
+            color: #764ba2;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            color: #c7254e;
+        }
+
+        pre {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+
+        pre code {
+            background: none;
+            color: #ecf0f1;
+            padding: 0;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .tip-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .example-box {
+            background: #e7f3ff;
+            border-left: 5px solid #2196F3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        ul, ol {
+            margin-left: 25px;
+            margin-top: 10px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .checklist li {
+            padding: 10px;
+            margin: 8px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+            padding-left: 40px;
+            position: relative;
+        }
+
+        .checklist li:before {
+            content: "☐";
+            position: absolute;
+            left: 15px;
+            font-size: 1.3em;
+            color: #667eea;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+        }
+
+        .diagram-box {
+            background: #f8f9fa;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+
+        .diagram-box h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .diagram-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .visual-diagram {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            line-height: 1.8;
+            white-space: pre;
+            font-size: 0.85em;
+        }
+
+        .scope-block {
+            background: #e8f4f8;
+            border: 2px solid #2196F3;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .scope-global {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+        }
+
+        .scope-function {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+
+        .ast-node {
+            background: #e7f3ff;
+            border: 2px solid #2196F3;
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+
+        .flow-arrow {
+            color: #764ba2;
+            font-size: 1.5em;
+            text-align: center;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Compiler Extension Project</h1>
+            <p>Adding Function Support to the Minimal Compiler</p>
+        </header>
+
+        <div class="content">
+            <div class="intro-box">
+                <h2>Project Overview</h2>
+                <p>In this project, you will extend the minimal compiler to support functions—one of the most fundamental features in programming languages. Functions require significant changes across all phases of compilation, from lexical analysis to code generation. This comprehensive activity will deepen your understanding of compiler construction and the challenges of implementing complex language features.</p>
+            </div>
+
+            <div class="learning-objectives">
+                <h3>Learning Objectives</h3>
+                <ul>
+                    <li>Understand how function declarations and calls are represented at each compilation phase</li>
+                    <li>Implement scope management and nested symbol tables</li>
+                    <li>Design new AST node types for function-related constructs</li>
+                    <li>Generate intermediate code for function calls and returns</li>
+                    <li>Implement calling conventions and stack frame management</li>
+                    <li>Apply function-specific optimizations like inlining</li>
+                </ul>
+            </div>
+
+            <div class="example-box">
+                <h3>Target Functionality</h3>
+                <p>By the end of this project, your compiler should handle programs like this:</p>
+                <pre><code>int add(int a, int b) {
+    return a + b;
+}
+
+int main() {
+    int x;
+    int result;
+    x = 5;
+    result = add(x, 3);
+    print(result);
+    return 0;
+}</code></pre>
+            </div>
+
+            <h2>Visual Guide: Key Concepts</h2>
+            <p>Before diving into implementation, let's visualize the core concepts you'll be working with:</p>
+
+            <!-- Compilation Phase Flow Diagram -->
+            <div class="diagram-box">
+                <div class="diagram-title">Compilation Phases for Function Support</div>
+                <div class="visual-diagram">┌─────────────────────────────────────────────────────────────────────┐
+│  SOURCE CODE: int add(int a, int b) { return a + b; }              │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│  PHASE 1: SCANNER (scanner.l)                                       │
+│  Tokens: INT ID(add) LPAREN INT ID(a) COMMA INT ID(b) RPAREN       │
+│          LBRACE RETURN ID(a) PLUS ID(b) SEMI RBRACE                 │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│  PHASE 2: PARSER (parser.y)                                         │
+│  Grammar Rules: func_decl → type ID ( param_list ) { stmt_list }   │
+│  Validates: Syntax is correct, parameters match, braces balanced    │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│  PHASE 3: AST (ast.h/c)                                             │
+│                    FUNC_DECL("add", type=int)                       │
+│                    /         |          \                           │
+│            PARAM_LIST      BODY      RETURN_TYPE                    │
+│              /    \          |                                      │
+│         PARAM(a) PARAM(b)  RETURN                                   │
+│                              |                                      │
+│                           BINOP(+)                                  │
+│                           /      \                                  │
+│                        VAR(a)   VAR(b)                              │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│  PHASE 4: SYMBOL TABLE (symtab.h/c)                                 │
+│  ┌──────────────────────────────────────────────┐                  │
+│  │ GLOBAL SCOPE                                 │                  │
+│  │  - add: function(int, int) → int             │                  │
+│  │    ┌───────────────────────────────────────┐ │                  │
+│  │    │ FUNCTION SCOPE (add)                  │ │                  │
+│  │    │  - a: int (param, offset +8)          │ │                  │
+│  │    │  - b: int (param, offset +12)         │ │                  │
+│  │    └───────────────────────────────────────┘ │                  │
+│  └──────────────────────────────────────────────┘                  │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│  PHASE 5: TAC GENERATION (tac.h/c)                                  │
+│    FUNC_BEGIN add                                                   │
+│    LABEL add                                                        │
+│    t0 = a + b                                                       │
+│    RETURN t0                                                        │
+│    FUNC_END add                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│  PHASE 6: OPTIMIZATION                                              │
+│    FUNC_BEGIN add                                                   │
+│    LABEL add                                                        │
+│    t0 = a + b              ← Could be inlined if small enough       │
+│    RETURN t0                                                        │
+│    FUNC_END add                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────────┐
+│  PHASE 7: MIPS CODE GENERATION (codegen.c)                          │
+│    add:                                                             │
+│        addi $sp, $sp, -8      # Allocate frame                      │
+│        sw   $ra, 4($sp)       # Save return address                 │
+│        sw   $fp, 0($sp)       # Save frame pointer                  │
+│        move $fp, $sp          # Set new frame pointer               │
+│        lw   $t0, 8($fp)       # Load param a                        │
+│        lw   $t1, 12($fp)      # Load param b                        │
+│        add  $v0, $t0, $t1     # Compute result                      │
+│        move $sp, $fp          # Restore stack                       │
+│        lw   $fp, 0($sp)       # Restore frame pointer               │
+│        lw   $ra, 4($sp)       # Restore return address              │
+│        addi $sp, $sp, 8       # Deallocate frame                    │
+│        jr   $ra               # Return to caller                    │
+└─────────────────────────────────────────────────────────────────────┘</div>
+            </div>
+
+            <!-- Scope Management Diagram -->
+            <div class="diagram-box">
+                <div class="diagram-title">Symbol Table: Scope Hierarchy</div>
+                <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 15px;">
+                    <strong>Key Insight:</strong> Scopes form a stack. When looking up a variable, search from the innermost (current) scope outward to global scope.
+                </p>
+                <div class="visual-diagram">
+EXAMPLE PROGRAM:
+─────────────────
+int x;                          // Global variable
+int y;                          // Global variable
+
+int add(int a, int b) {         // Function 'add' has its own scope
+    int result;                 // Local to 'add'
+    result = a + b;
+    return result;
+}
+
+int main() {                    // Function 'main' has its own scope
+    int x;                      // Shadows global x!
+    int z;                      // Local to 'main'
+    x = 5;
+    z = add(x, 3);
+    print(z);
+}
+
+
+SCOPE HIERARCHY DURING EXECUTION:
+═══════════════════════════════════════════════════════════════════════
+
+When compiler is processing "result = a + b;" inside add():
+
+┌─────────────────────────────────────────────────────────────────────┐
+│  GLOBAL SCOPE (always present)                  parent: NULL        │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │  Symbol Table:                                              │   │
+│  │    x       → int, offset 0                                  │   │
+│  │    y       → int, offset 4                                  │   │
+│  │    add     → function(int, int) → int                       │   │
+│  │    main    → function() → int                               │   │
+│  └─────────────────────────────────────────────────────────────┘   │
+│                                                                      │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │  FUNCTION SCOPE: add()              parent: GLOBAL           │  │
+│  │  ┌──────────────────────────────────────────────────────┐   │  │
+│  │  │  Symbol Table:                                        │   │  │
+│  │  │    a      → int, param, offset +8    (parameter)     │   │  │
+│  │  │    b      → int, param, offset +12   (parameter)     │   │  │
+│  │  │    result → int, local, offset -4    (local var)     │   │  │
+│  │  └──────────────────────────────────────────────────────┘   │  │
+│  │                                                               │  │
+│  │  ← currentScope (points here when compiling add's body)      │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+
+
+LOOKUP PROCESS for "a" in "result = a + b;":
+──────────────────────────────────────────────
+1. Check current scope (add's scope):     ✓ Found 'a' (parameter)
+2. Don't need to check parent scopes
+
+LOOKUP PROCESS for "x" inside main():
+──────────────────────────────────────
+┌─────────────────────────────────────────────────────────────────────┐
+│  GLOBAL SCOPE                                                        │
+│    x → int (offset 0)                                                │
+│                                                                      │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │  FUNCTION SCOPE: main()                                      │  │
+│  │    x → int (offset -4)    ← This shadows the global x!       │  │
+│  │    z → int (offset -8)                                        │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
+
+When looking up "x" in main:
+1. Check current scope (main):  ✓ Found 'x' (local) - USE THIS ONE
+2. Never reaches global 'x' because local shadows it
+
+
+IMPLEMENTATION: enterScope() and exitScope()
+─────────────────────────────────────────────
+Scope* currentScope = globalScope;
+
+void enterScope() {
+    Scope* newScope = malloc(sizeof(Scope));
+    newScope->parent = currentScope;    // Link to enclosing scope
+    newScope->count = 0;
+    currentScope = newScope;            // Push onto scope stack
+}
+
+void exitScope() {
+    Scope* oldScope = currentScope;
+    currentScope = currentScope->parent; // Pop scope stack
+    free(oldScope);                      // Clean up
+}</div>
+            </div>
+
+            <!-- Function AST Diagram -->
+            <div class="diagram-box">
+                <div class="diagram-title">AST Structure for Functions</div>
+                <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 15px;">
+                    <strong>Example:</strong> <code>int add(int a, int b) { return a + b; }</code>
+                </p>
+                <div class="visual-diagram">
+                        ┌───────────────────────────────┐
+                        │  NODE_FUNC_DECL               │
+                        │  name: "add"                  │
+                        │  returnType: "int"            │
+                        └───────┬───────────────────────┘
+                                │
+                ┌───────────────┼───────────────┐
+                │               │               │
+                ▼               ▼               ▼
+        ┌───────────┐   ┌──────────┐   ┌──────────────┐
+        │ params    │   │   body   │   │ returnType   │
+        └─────┬─────┘   └────┬─────┘   └──────────────┘
+              │              │
+              │              │
+              ▼              ▼
+    ┌──────────────────┐   ┌────────────────┐
+    │ NODE_PARAM_LIST  │   │ NODE_RETURN    │
+    └────┬─────────────┘   └───────┬────────┘
+         │                         │
+    ┌────┴────┐                   ▼
+    │         │             ┌──────────────┐
+    ▼         ▼             │ NODE_BINOP   │
+┌────────┐ ┌────────┐      │   op: '+'    │
+│ PARAM  │ │ PARAM  │      └──────┬───────┘
+│ name:a │ │ name:b │             │
+│ type:  │ │ type:  │       ┌─────┴─────┐
+│  int   │ │  int   │       │           │
+└────────┘ └────────┘       ▼           ▼
+                        ┌────────┐  ┌────────┐
+                        │NODE_VAR│  │NODE_VAR│
+                        │ name:a │  │ name:b │
+                        └────────┘  └────────┘
+
+
+CONTRASTING STRUCTURES:
+═══════════════════════
+
+Function Call AST: result = add(x, 3);
+──────────────────
+            ┌──────────────────┐
+            │  NODE_ASSIGN     │
+            │  var: "result"   │
+            └────────┬─────────┘
+                     │
+                     ▼
+            ┌──────────────────┐
+            │ NODE_FUNC_CALL   │
+            │  name: "add"     │
+            └────────┬─────────┘
+                     │
+                     ▼
+            ┌──────────────────┐
+            │ NODE_ARG_LIST    │
+            └────┬─────────────┘
+                 │
+         ┌───────┴───────┐
+         │               │
+         ▼               ▼
+    ┌────────┐      ┌────────┐
+    │NODE_VAR│      │NODE_NUM│
+    │ name:x │      │ value:3│
+    └────────┘      └────────┘
+
+
+Parameter vs. Argument List:
+─────────────────────────────
+NODE_PARAM_LIST: Used in function DECLARATION (formal parameters)
+  - Stores parameter type AND name
+  - Example: (int a, int b)
+
+NODE_ARG_LIST: Used in function CALL (actual arguments)
+  - Stores expressions (can be variables, constants, or expressions)
+  - Example: (x, 3) or (a+1, b*2)</div>
+            </div>
+
+            <!-- TAC Flow Diagram -->
+            <div class="diagram-box">
+                <div class="diagram-title">TAC Generation Flow for Function Calls</div>
+                <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 15px;">
+                    <strong>Example:</strong> <code>result = add(x, 3);</code> where <code>x = 5</code>
+                </p>
+                <div class="visual-diagram">
+SOURCE CODE:
+────────────
+int x;
+x = 5;
+result = add(x, 3);
+
+
+TAC GENERATION PROCESS:
+═══════════════════════
+
+Step 1: Generate TAC for argument expressions (right to left or left to right)
+────────
+Evaluate: x → already a variable, use directly
+Evaluate: 3 → constant, use directly
+
+Generated TAC:
+  PARAM x        ← Push first argument
+  PARAM 3        ← Push second argument
+
+
+Step 2: Generate function CALL instruction
+────────
+Generated TAC:
+  t0 = CALL add, 2    ← Call 'add' with 2 params, store result in t0
+
+
+Step 3: Generate assignment to result variable
+────────
+Generated TAC:
+  result = t0    ← Assign return value to result
+
+
+COMPLETE TAC SEQUENCE:
+═════════════════════════════════════════════════════════════════
+
+For declaration: int add(int a, int b) { return a + b; }
+────────────────
+  FUNC_BEGIN add        ← Mark start of function definition
+  LABEL add             ← Entry point for function
+  t1 = a + b            ← Compute expression
+  RETURN t1             ← Return result
+  FUNC_END add          ← Mark end of function
+
+
+For caller: result = add(x, 3);
+───────────
+  PARAM x               ← Push arguments (caller's job)
+  PARAM 3
+  t0 = CALL add, 2      ← Make the call
+  result = t0           ← Store result
+
+
+MIPS TRANSLATION:
+═══════════════════════════════════════════════════════════════
+
+TAC: PARAM x
+MIPS: lw $a0, offset_x($fp)   # Load x into first argument register
+
+TAC: PARAM 3
+MIPS: li $a1, 3                # Load constant into second argument register
+
+TAC: t0 = CALL add, 2
+MIPS: jal add                  # Jump and link to function
+      move $t0, $v0            # Get return value from $v0
+
+TAC: result = t0
+MIPS: sw $t0, offset_result($fp)  # Store in result variable
+
+
+NESTED CALLS:
+═════════════
+For: z = add(add(1, 2), 3);
+────────────────────────────
+  # Inner call: add(1, 2)
+  PARAM 1
+  PARAM 2
+  t0 = CALL add, 2       # t0 now holds result of add(1,2)
+
+  # Outer call: add(t0, 3)
+  PARAM t0               # Use result from inner call!
+  PARAM 3
+  t1 = CALL add, 2       # t1 holds final result
+
+  # Assignment
+  z = t1</div>
+            </div>
+
+            <h2>Compiler Architecture Recap</h2>
+            <p>Your current minimal compiler consists of these components:</p>
+
+            <table>
+                <tr>
+                    <th>Component</th>
+                    <th>Files</th>
+                    <th>Current Functionality</th>
+                </tr>
+                <tr>
+                    <td><strong>Lexical Analyzer</strong></td>
+                    <td><span class="file-badge">scanner.l</span></td>
+                    <td>Tokenizes keywords (int, print), identifiers, numbers, operators (+, =, ;, parentheses)</td>
+                </tr>
+                <tr>
+                    <td><strong>Parser</strong></td>
+                    <td><span class="file-badge">parser.y</span></td>
+                    <td>Parses declarations, assignments, print statements, and expressions</td>
+                </tr>
+                <tr>
+                    <td><strong>AST</strong></td>
+                    <td><span class="file-badge">ast.h</span> <span class="file-badge">ast.c</span></td>
+                    <td>Represents numbers, variables, binary operations, declarations, assignments, print statements</td>
+                </tr>
+                <tr>
+                    <td><strong>Symbol Table</strong></td>
+                    <td><span class="file-badge">symtab.h</span> <span class="file-badge">symtab.c</span></td>
+                    <td>Flat symbol table tracking variable names and stack offsets</td>
+                </tr>
+                <tr>
+                    <td><strong>TAC Generator</strong></td>
+                    <td><span class="file-badge">tac.h</span> <span class="file-badge">tac.c</span></td>
+                    <td>Generates three-address code with ADD, ASSIGN, PRINT, DECL operations</td>
+                </tr>
+                <tr>
+                    <td><strong>Optimizer</strong></td>
+                    <td><span class="file-badge">tac.c</span></td>
+                    <td>Implements constant folding and copy propagation</td>
+                </tr>
+                <tr>
+                    <td><strong>Code Generator</strong></td>
+                    <td><span class="file-badge">codegen.h</span> <span class="file-badge">codegen.c</span></td>
+                    <td>Generates MIPS assembly with stack-based variable storage</td>
+                </tr>
+            </table>
+
+            <h2>Implementation Roadmap</h2>
+            <p>Follow these tasks in order to systematically add function support to your compiler:</p>
+
+            <!-- Task 1: Scanner -->
+            <div class="task-card">
+                <div class="task-header">
+                    <div class="task-number">1</div>
+                    <div class="task-title">Extend the Lexical Analyzer</div>
+                </div>
+
+                <p><strong>Files to modify:</strong> <span class="file-badge">scanner.l</span></p>
+
+                <p>The scanner needs to recognize new tokens related to functions. Add recognition for function-related keywords and delimiters.</p>
+
+                <div class="subtask">
+                    <h4>New Tokens Required</h4>
+                    <ul>
+                        <li><code>return</code> keyword - for returning values from functions</li>
+                        <li><code>void</code> keyword - for functions with no return value</li>
+                        <li><code>{</code> and <code>}</code> - for function body blocks</li>
+                        <li><code>,</code> - for parameter lists</li>
+                    </ul>
+                </div>
+
+                <div class="example-box">
+                    <h4>Example Scanner Rules</h4>
+                    <pre><code>"return"        { return RETURN; }
+"void"          { return VOID; }
+"{"             { return '{'; }
+"}"             { return '}'; }
+","             { return ','; }</code></pre>
+                </div>
+
+                <div class="tip-box">
+                    <strong>Testing Tip:</strong> After adding tokens, test by running just the scanner phase on a simple function declaration to ensure all tokens are recognized correctly.
+                </div>
+            </div>
+
+            <!-- Task 2: Parser -->
+            <div class="task-card">
+                <div class="task-header">
+                    <div class="task-number">2</div>
+                    <div class="task-title">Extend the Parser Grammar</div>
+                </div>
+
+                <p><strong>Files to modify:</strong> <span class="file-badge">parser.y</span></p>
+
+                <p>The parser grammar must be extended to handle function declarations, function calls, parameter lists, return statements, and compound statements (blocks).</p>
+
+                <div class="subtask">
+                    <h4>New Grammar Rules Needed</h4>
+
+                    <p><strong>1. Program Structure</strong></p>
+                    <p>Change program to be a list of functions instead of just statements:</p>
+                    <pre><code>program:
+    func_list { $$ = $1; }
+    ;
+
+func_list:
+    func_decl { $$ = $1; }
+    | func_list func_decl { $$ = createFuncList($1, $2); }
+    ;</code></pre>
+
+                    <p><strong>2. Function Declaration</strong></p>
+                    <pre><code>func_decl:
+    type ID '(' param_list ')' '{' stmt_list '}' {
+        $$ = createFuncDecl($1, $2, $4, $7);
+    }
+    | type ID '(' ')' '{' stmt_list '}' {
+        $$ = createFuncDecl($1, $2, NULL, $6);
+    }
+    ;
+
+type:
+    INT { $$ = "int"; }
+    | VOID { $$ = "void"; }
+    ;</code></pre>
+
+                    <p><strong>3. Parameter List</strong></p>
+                    <pre><code>param_list:
+    param { $$ = $1; }
+    | param_list ',' param { $$ = createParamList($1, $3); }
+    ;
+
+param:
+    type ID { $$ = createParam($1, $2); }
+    ;</code></pre>
+
+                    <p><strong>4. Return Statement</strong></p>
+                    <pre><code>stmt:
+    /* existing rules... */
+    | return_stmt
+    ;
+
+return_stmt:
+    RETURN expr ';' { $$ = createReturn($2); }
+    | RETURN ';' { $$ = createReturn(NULL); }
+    ;</code></pre>
+
+                    <p><strong>5. Function Call in Expressions</strong></p>
+                    <pre><code>expr:
+    /* existing rules... */
+    | ID '(' arg_list ')' { $$ = createFuncCall($1, $3); }
+    | ID '(' ')' { $$ = createFuncCall($1, NULL); }
+    ;
+
+arg_list:
+    expr { $$ = $1; }
+    | arg_list ',' expr { $$ = createArgList($1, $3); }
+    ;</code></pre>
+                </div>
+
+                <div class="warning-box">
+                    <strong>Important:</strong> Update the <code>%union</code> declaration to include new semantic value types for functions, parameters, and other new constructs.
+                </div>
+            </div>
+
+            <!-- Task 3: AST -->
+            <div class="task-card">
+                <div class="task-header">
+                    <div class="task-number">3</div>
+                    <div class="task-title">Extend the Abstract Syntax Tree</div>
+                </div>
+
+                <p><strong>Files to modify:</strong> <span class="file-badge">ast.h</span> <span class="file-badge">ast.c</span></p>
+
+                <p>The AST must represent all new language constructs. This requires new node types and corresponding creation functions.</p>
+
+                <div class="subtask">
+                    <h4>New Node Types (ast.h)</h4>
+                    <p>Add these to the <code>NodeType</code> enum:</p>
+                    <pre><code>typedef enum {
+    /* Existing types... */
+    NODE_FUNC_DECL,    // Function declaration
+    NODE_FUNC_CALL,    // Function call (in expressions)
+    NODE_PARAM,        // Parameter declaration
+    NODE_PARAM_LIST,   // List of parameters
+    NODE_ARG_LIST,     // List of arguments in call
+    NODE_RETURN,       // Return statement
+    NODE_FUNC_LIST,    // List of function declarations
+    NODE_BLOCK         // Compound statement (for scoping)
+} NodeType;</code></pre>
+                </div>
+
+                <div class="subtask">
+                    <h4>AST Node Structure Updates</h4>
+                    <p>Extend the union in <code>ASTNode</code> structure:</p>
+                    <pre><code>typedef struct ASTNode {
+    NodeType type;
+    union {
+        /* Existing fields... */
+
+        // Function declaration
+        struct {
+            char* returnType;        // "int" or "void"
+            char* name;              // Function name
+            struct ASTNode* params;  // Parameter list
+            struct ASTNode* body;    // Function body (stmt list)
+        } func_decl;
+
+        // Function call
+        struct {
+            char* name;              // Function name
+            struct ASTNode* args;    // Argument list
+        } func_call;
+
+        // Parameter
+        struct {
+            char* type;              // Parameter type
+            char* name;              // Parameter name
+        } param;
+
+        // Parameter/Argument list
+        struct {
+            struct ASTNode* item;    // Current param/arg
+            struct ASTNode* next;    // Rest of list
+        } list;
+
+        // Return statement
+        struct ASTNode* return_expr; // Expression to return (NULL for void)
+
+    } data;
+} ASTNode;</code></pre>
+                </div>
+
+                <div class="subtask">
+                    <h4>New Creation Functions (ast.c)</h4>
+                    <p>Implement these node creation functions:</p>
+                    <pre><code>ASTNode* createFuncDecl(char* returnType, char* name,
+                        ASTNode* params, ASTNode* body);
+ASTNode* createFuncCall(char* name, ASTNode* args);
+ASTNode* createParam(char* type, char* name);
+ASTNode* createParamList(ASTNode* param, ASTNode* next);
+ASTNode* createArgList(ASTNode* arg, ASTNode* next);
+ASTNode* createReturn(ASTNode* expr);
+ASTNode* createFuncList(ASTNode* func, ASTNode* next);</code></pre>
+                </div>
+
+                <div class="tip-box">
+                    <strong>Debugging Tip:</strong> Update <code>printAST()</code> function to display these new node types. This will be invaluable for debugging your parser.
+                </div>
+            </div>
+
+            <!-- Task 4: Symbol Table -->
+            <div class="task-card">
+                <div class="task-header">
+                    <div class="task-number">4</div>
+                    <div class="task-title">Implement Scope Management</div>
+                </div>
+
+                <p><strong>Files to modify:</strong> <span class="file-badge">symtab.h</span> <span class="file-badge">symtab.c</span></p>
+
+                <p>This is one of the most critical changes! Functions introduce <strong>scope</strong>—the current flat symbol table is insufficient. You need a hierarchical scope structure.</p>
+
+                <div class="subtask">
+                    <h4>Scope Concept</h4>
+                    <ul>
+                        <li><strong>Global scope:</strong> Function declarations visible everywhere</li>
+                        <li><strong>Function scope:</strong> Parameters and local variables visible only within the function</li>
+                        <li><strong>Nested scopes:</strong> Need a stack of scopes to handle lookup correctly</li>
+                    </ul>
+                </div>
+
+                <div class="subtask">
+                    <h4>New Symbol Table Structure</h4>
+                    <pre><code>// Enhanced symbol entry
+typedef struct {
+    char* name;
+    char* type;      // Variable type or function signature
+    int offset;      // Stack offset (for variables)
+    int isFunction;  // 1 if this is a function, 0 if variable
+    int paramCount;  // Number of parameters (if function)
+    char** paramTypes; // Array of parameter types
+} Symbol;
+
+// Scope structure
+typedef struct Scope {
+    Symbol vars[MAX_VARS];
+    int count;
+    int nextOffset;
+    struct Scope* parent;  // Link to enclosing scope
+} Scope;
+
+// Symbol table with scope stack
+typedef struct {
+    Scope* currentScope;   // Top of scope stack
+    Scope* globalScope;    // Always points to global
+} SymbolTable;</code></pre>
+                </div>
+
+                <div class="subtask">
+                    <h4>New Symbol Table Operations</h4>
+                    <pre><code>void enterScope();              // Push new scope (entering function)
+void exitScope();               // Pop scope (leaving function)
+int addFunction(char* name, char* returnType,
+                char** paramTypes, int paramCount);
+int addParameter(char* name, char* type);
+Symbol* lookupSymbol(char* name);  // Search current + parent scopes
+int isInCurrentScope(char* name);  // Check only current scope</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>Scope Lookup Example</h4>
+                    <p>When looking up a variable, search from innermost scope outward:</p>
+                    <pre><code>Symbol* lookupSymbol(char* name) {
+    Scope* scope = symtab.currentScope;
+
+    // Search from current scope up to global
+    while (scope != NULL) {
+        for (int i = 0; i < scope->count; i++) {
+            if (strcmp(scope->vars[i].name, name) == 0) {
+                return &scope->vars[i];  // Found it
+            }
+        }
+        scope = scope->parent;  // Try parent scope
+    }
+    return NULL;  // Not found in any scope
+}</code></pre>
+                </div>
+
+                <div class="warning-box">
+                    <strong>Critical:</strong> Call <code>enterScope()</code> when entering a function body and <code>exitScope()</code> when leaving. This maintains the scope stack correctly.
+                </div>
+            </div>
+
+            <!-- Task 5: TAC Generation -->
+            <div class="task-card">
+                <div class="task-header">
+                    <div class="task-number">5</div>
+                    <div class="task-title">Extend TAC Generation</div>
+                </div>
+
+                <p><strong>Files to modify:</strong> <span class="file-badge">tac.h</span> <span class="file-badge">tac.c</span></p>
+
+                <p>Three-address code needs new instructions to represent function calls, parameter passing, and returns.</p>
+
+                <div class="subtask">
+                    <h4>New TAC Operations</h4>
+                    <pre><code>typedef enum {
+    /* Existing operations... */
+    TAC_LABEL,       // Function entry point: LABEL func_name
+    TAC_PARAM,       // Pass parameter: PARAM arg
+    TAC_CALL,        // Function call: result = CALL func_name, num_params
+    TAC_RETURN,      // Return value: RETURN value
+    TAC_FUNC_BEGIN,  // Mark function start: FUNC_BEGIN name
+    TAC_FUNC_END     // Mark function end: FUNC_END name
+} TACOp;</code></pre>
+                </div>
+
+                <div class="subtask">
+                    <h4>TAC Instruction Updates</h4>
+                    <p>The existing <code>TACInstr</code> structure may need extension:</p>
+                    <pre><code>typedef struct TACInstr {
+    TACOp op;
+    char* arg1;
+    char* arg2;
+    char* result;
+    int paramCount;  // For CALL instruction: number of params
+    struct TACInstr* next;
+} TACInstr;</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>TAC for Function Call Example</h4>
+                    <p>For <code>result = add(x, 3);</code>, generate:</p>
+                    <pre><code>PARAM x           // Push first argument
+PARAM 3           // Push second argument
+t0 = CALL add, 2  // Call function, 2 params, result in t0
+result = t0       // Assign result</code></pre>
+                </div>
+
+                <div class="example-box">
+                    <h4>TAC for Function Declaration Example</h4>
+                    <p>For <code>int add(int a, int b) { return a + b; }</code>, generate:</p>
+                    <pre><code>FUNC_BEGIN add
+LABEL add
+t0 = a + b
+RETURN t0
+FUNC_END add</code></pre>
+                </div>
+
+                <div class="subtask">
+                    <h4>Generating TAC for Functions</h4>
+                    <p>Add cases in <code>generateTAC()</code>:</p>
+                    <pre><code>case NODE_FUNC_DECL:
+    appendTAC(createTAC(TAC_FUNC_BEGIN, NULL, NULL,
+                        node->data.func_decl.name));
+    appendTAC(createTAC(TAC_LABEL, NULL, NULL,
+                        node->data.func_decl.name));
+    // Generate TAC for function body
+    generateTAC(node->data.func_decl.body);
+    appendTAC(createTAC(TAC_FUNC_END, NULL, NULL,
+                        node->data.func_decl.name));
+    break;
+
+case NODE_FUNC_CALL: {
+    // Generate TAC for each argument
+    ASTNode* arg = node->data.func_call.args;
+    int paramCount = 0;
+    while (arg) {
+        char* argVal = generateTACExpr(arg->data.list.item);
+        appendTAC(createTAC(TAC_PARAM, argVal, NULL, NULL));
+        paramCount++;
+        arg = arg->data.list.next;
+    }
+    // Generate the call
+    char* temp = newTemp();
+    TACInstr* call = createTAC(TAC_CALL, node->data.func_call.name,
+                               NULL, temp);
+    call->paramCount = paramCount;
+    appendTAC(call);
+    return temp;
+}
+
+case NODE_RETURN: {
+    if (node->data.return_expr) {
+        char* retVal = generateTACExpr(node->data.return_expr);
+        appendTAC(createTAC(TAC_RETURN, retVal, NULL, NULL));
+    } else {
+        appendTAC(createTAC(TAC_RETURN, NULL, NULL, NULL));
+    }
+    break;
+}</code></pre>
+                </div>
+            </div>
+
+            <!-- Task 6: Optimization -->
+            <div class="task-card">
+                <div class="task-header">
+                    <div class="task-number">6</div>
+                    <div class="task-title">Implement Function-Specific Optimizations</div>
+                </div>
+
+                <p><strong>Files to modify:</strong> <span class="file-badge">tac.c</span></p>
+
+                <p>Functions enable new optimization opportunities beyond the existing constant folding and copy propagation.</p>
+
+                <div class="subtask">
+                    <h4>Optimization 1: Function Inlining</h4>
+                    <p>Replace small function calls with the function body inline.</p>
+                    <p><strong>When to inline:</strong></p>
+                    <ul>
+                        <li>Function body is very small (e.g., fewer than 5 TAC instructions)</li>
+                        <li>Function is called only once or very few times</li>
+                        <li>No recursive calls</li>
+                    </ul>
+                    <pre><code>// Before inlining:
+PARAM x
+PARAM 3
+t0 = CALL add, 2
+result = t0
+
+// After inlining add(a,b) { return a+b; }:
+t0 = x + 3
+result = t0</code></pre>
+                </div>
+
+                <div class="subtask">
+                    <h4>Optimization 2: Dead Code Elimination After Return</h4>
+                    <p>Remove unreachable code after return statements.</p>
+                    <pre><code>// Before:
+t0 = a + b
+RETURN t0
+x = 10        // Dead code - never executed
+PRINT x       // Dead code - never executed
+
+// After:
+t0 = a + b
+RETURN t0</code></pre>
+                </div>
+
+                <div class="subtask">
+                    <h4>Optimization 3: Tail Call Optimization</h4>
+                    <p>When a function's last action is calling another function and returning its result, replace CALL+RETURN with a jump.</p>
+                    <pre><code>// Before:
+t0 = CALL helper, 1
+RETURN t0
+
+// After:
+JUMP helper    // Tail call - reuse current stack frame</code></pre>
+                </div>
+
+                <div class="tip-box">
+                    <strong>Implementation Strategy:</strong> Start with dead code elimination (easiest), then add inlining for small functions. Tail call optimization is more advanced and can be saved for extra credit.
+                </div>
+            </div>
+
+            <!-- Task 7: Code Generation -->
+            <div class="task-card">
+                <div class="task-header">
+                    <div class="task-number">7</div>
+                    <div class="task-title">Implement Calling Convention</div>
+                </div>
+
+                <p><strong>Files to modify:</strong> <span class="file-badge">codegen.h</span> <span class="file-badge">codegen.c</span></p>
+
+                <p>This is the most challenging part! You need to implement the complete MIPS calling convention including stack frames, argument passing, and return values.</p>
+
+                <div class="subtask">
+                    <h4>MIPS Calling Convention Overview</h4>
+                    <table>
+                        <tr>
+                            <th>Registers</th>
+                            <th>Purpose</th>
+                            <th>Usage</th>
+                        </tr>
+                        <tr>
+                            <td><code>$a0-$a3</code></td>
+                            <td>Argument registers</td>
+                            <td>First 4 arguments passed in these registers</td>
+                        </tr>
+                        <tr>
+                            <td><code>$v0-$v1</code></td>
+                            <td>Return value registers</td>
+                            <td>Function return values</td>
+                        </tr>
+                        <tr>
+                            <td><code>$ra</code></td>
+                            <td>Return address</td>
+                            <td>Stores address to return to after function call</td>
+                        </tr>
+                        <tr>
+                            <td><code>$fp</code></td>
+                            <td>Frame pointer</td>
+                            <td>Points to current stack frame</td>
+                        </tr>
+                        <tr>
+                            <td><code>$sp</code></td>
+                            <td>Stack pointer</td>
+                            <td>Points to top of stack</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="subtask">
+                    <h4>Stack Frame Layout</h4>
+                    <p>Each function call creates a stack frame:</p>
+                    <pre><code>High Memory
+    ┌──────────────────┐
+    │  Arguments 5+    │ (if more than 4 args)
+    ├──────────────────┤ ← $fp (caller's frame)
+    │  Return Address  │ ($ra)
+    ├──────────────────┤
+    │  Saved $fp       │ (previous frame pointer)
+    ├──────────────────┤
+    │  Local Variables │
+    ├──────────────────┤
+    │  Saved Registers │ (if needed)
+    ├──────────────────┤ ← $sp (top of stack)
+Low Memory</code></pre>
+                </div>
+
+                <div class="diagram-box">
+                    <div class="diagram-title">Stack Frame Evolution During Function Call</div>
+                    <p style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin-bottom: 15px;">
+                        <strong>Walkthrough:</strong> Calling <code>add(5, 3)</code> from <code>main()</code>
+                    </p>
+                    <div class="visual-diagram">
+STEP 1: Before calling add(5, 3)
+═══════════════════════════════════════════════════════════════
+Stack in main():
+
+High Addr   ┌─────────────────────┐
+            │  (main's variables) │
+            ├─────────────────────┤ ← $fp (main's frame pointer)
+            │  Return Address     │ (back to OS)
+            ├─────────────────────┤
+            │  Saved $fp          │
+            ├─────────────────────┤ ← $sp (stack pointer)
+Low Addr
+
+Registers: $a0 = 5, $a1 = 3  (arguments loaded)
+
+
+STEP 2: Execute "jal add" (Jump And Link)
+═══════════════════════════════════════════════════════════════
+- $ra ← address of instruction after jal (return address)
+- PC ← address of 'add' function
+
+High Addr   ┌─────────────────────┐
+            │  (main's variables) │
+            ├─────────────────────┤ ← $fp still points here
+            │  Return Address     │
+            ├─────────────────────┤
+            │  Saved $fp          │
+            ├─────────────────────┤ ← $sp
+Low Addr
+
+Registers: $ra = return_address, $a0 = 5, $a1 = 3
+
+
+STEP 3: Function Prologue of add()
+═══════════════════════════════════════════════════════════════
+Executed instructions:
+  addi $sp, $sp, -8      # Make room for $ra and $fp
+  sw   $ra, 4($sp)       # Save return address
+  sw   $fp, 0($sp)       # Save old frame pointer
+  move $fp, $sp          # Set new frame pointer
+
+High Addr   ┌─────────────────────┐
+            │  (main's variables) │
+            ├─────────────────────┤ ← main's $fp
+            │  Return Address     │
+            ├─────────────────────┤
+            │  Saved $fp (main)   │
+            ├─────────────────────┤
+            │  Saved $ra ────────┼──→ Points back to main
+            ├─────────────────────┤
+            │  Saved $fp (prev)   │
+            ├─────────────────────┤ ← $fp (add's frame pointer)
+            │                     │ ← $sp
+Low Addr
+
+
+STEP 4: Allocate space for local variables (if any)
+═══════════════════════════════════════════════════════════════
+If add() had local variables:
+  addi $sp, $sp, -N      # N = 4 * number of locals
+
+High Addr   ┌─────────────────────┐
+            │  (main's stack)     │
+            ├─────────────────────┤
+            │  Saved $ra          │
+            ├─────────────────────┤
+            │  Saved $fp          │
+            ├─────────────────────┤ ← $fp
+            │  Local var 1        │
+            ├─────────────────────┤
+            │  Local var 2        │
+            ├─────────────────────┤ ← $sp
+Low Addr
+
+
+STEP 5: Execute function body
+═══════════════════════════════════════════════════════════════
+  lw   $t0, 8($fp)       # Load param 'a' from $a0 (was stored)
+  lw   $t1, 12($fp)      # Load param 'b' from $a1 (was stored)
+  add  $v0, $t0, $t1     # Compute a + b, store in $v0
+
+Parameters accessed via positive offsets from $fp:
+  - First parameter:  +8($fp)
+  - Second parameter: +12($fp)
+Local variables accessed via negative offsets from $fp:
+  - First local:  -4($fp)
+  - Second local: -8($fp)
+
+
+STEP 6: Function Epilogue
+═══════════════════════════════════════════════════════════════
+  move $sp, $fp          # Restore stack pointer
+  lw   $fp, 0($sp)       # Restore old frame pointer
+  lw   $ra, 4($sp)       # Restore return address
+  addi $sp, $sp, 8       # Pop frame
+  jr   $ra               # Return to caller
+
+Result: $v0 = 8 (return value)
+
+
+STEP 7: Back in main() after call
+═══════════════════════════════════════════════════════════════
+High Addr   ┌─────────────────────┐
+            │  (main's variables) │
+            ├─────────────────────┤ ← $fp (restored to main's frame)
+            │  Return Address     │
+            ├─────────────────────┤
+            │  Saved $fp          │
+            ├─────────────────────┤ ← $sp (back where it was)
+Low Addr
+
+Registers: $v0 = 8 (result from add)
+Next instruction: move $t0, $v0  (retrieve result)
+
+
+KEY INSIGHTS:
+─────────────
+1. $fp stays constant within a function (reference point)
+2. $sp moves as stack space is allocated/deallocated
+3. Parameters at positive offsets from $fp (caller's stack)
+4. Locals at negative offsets from $fp (callee's stack)
+5. $ra MUST be saved if function makes any calls (nested)
+6. Return value always goes in $v0</div>
+                </div>
+
+                <div class="subtask">
+                    <h4>Function Prologue</h4>
+                    <p>Code generated at the start of each function:</p>
+                    <pre><code>function_name:
+    # Save return address and frame pointer
+    addi $sp, $sp, -8      # Make space for $ra and $fp
+    sw $ra, 4($sp)         # Save return address
+    sw $fp, 0($sp)         # Save old frame pointer
+    move $fp, $sp          # Set new frame pointer
+
+    # Allocate space for local variables
+    addi $sp, $sp, -N      # N = 4 * number of local vars
+
+    # Save argument registers to stack (parameters)
+    sw $a0, offset0($fp)   # Save first parameter
+    sw $a1, offset1($fp)   # Save second parameter
+    # ...</code></pre>
+                </div>
+
+                <div class="subtask">
+                    <h4>Function Epilogue</h4>
+                    <p>Code generated at function return:</p>
+                    <pre><code>    # Place return value in $v0 (if any)
+    lw $v0, offset($fp)    # Or compute into $v0
+
+    # Restore stack
+    move $sp, $fp          # Restore stack pointer
+    lw $fp, 0($sp)         # Restore frame pointer
+    lw $ra, 4($sp)         # Restore return address
+    addi $sp, $sp, 8       # Pop frame
+
+    jr $ra                 # Return to caller</code></pre>
+                </div>
+
+                <div class="subtask">
+                    <h4>Function Call Code Generation</h4>
+                    <p>When generating code for a function call:</p>
+                    <pre><code>    # 1. Evaluate and load arguments
+    # First 4 go in $a0-$a3
+    li $a0, value1         # Or lw from stack
+    li $a1, value2
+    # Arguments 5+ pushed onto stack
+
+    # 2. Call the function
+    jal function_name      # Jump and link (saves return in $ra)
+
+    # 3. Retrieve return value
+    move $t0, $v0          # Get result from $v0</code></pre>
+                </div>
+
+                <div class="warning-box">
+                    <strong>Common Pitfall:</strong> Ensure that when calling a function from within another function, you save/restore $ra properly. Nested calls will overwrite $ra if not saved!
+                </div>
+            </div>
+
+            <!-- Task 8: Testing -->
+            <div class="task-card">
+                <div class="task-header">
+                    <div class="task-number">8</div>
+                    <div class="task-title">Testing Strategy</div>
+                </div>
+
+                <p><strong>Files to create:</strong> Multiple test files (<span class="file-badge">test_*.c</span>)</p>
+
+                <p>Test your implementation incrementally with increasingly complex programs.</p>
+
+                <div class="subtask">
+                    <h4>Test 1: Simple Function (No Parameters)</h4>
+                    <pre><code>int getNumber() {
+    return 42;
+}
+
+int main() {
+    int x;
+    x = getNumber();
+    print(x);
+    return 0;
+}</code></pre>
+                </div>
+
+                <div class="subtask">
+                    <h4>Test 2: Function with Parameters</h4>
+                    <pre><code>int double(int n) {
+    return n + n;
+}
+
+int main() {
+    int result;
+    result = double(21);
+    print(result);
+    return 0;
+}</code></pre>
+                </div>
+
+                <div class="subtask">
+                    <h4>Test 3: Multiple Parameters</h4>
+                    <pre><code>int add(int a, int b) {
+    return a + b;
+}
+
+int main() {
+    print(add(10, 32));
+    return 0;
+}</code></pre>
+                </div>
+
+                <div class="subtask">
+                    <h4>Test 4: Nested Function Calls</h4>
+                    <pre><code>int add(int a, int b) {
+    return a + b;
+}
+
+int addThree(int a, int b, int c) {
+    return add(add(a, b), c);
+}
+
+int main() {
+    print(addThree(1, 2, 3));
+    return 0;
+}</code></pre>
+                </div>
+
+                <div class="subtask">
+                    <h4>Test 5: Scope Testing</h4>
+                    <pre><code>int x;  // Global
+
+int func(int x) {  // Parameter shadows global
+    int y;
+    y = x + 10;
+    return y;
+}
+
+int main() {
+    x = 5;
+    print(func(x));
+    print(x);  // Should still be 5
+    return 0;
+}</code></pre>
+                </div>
+
+                <div class="tip-box">
+                    <strong>Testing Methodology:</strong>
+                    <ol>
+                        <li>Test each phase independently (print AST, print TAC)</li>
+                        <li>Use a MIPS simulator to verify generated assembly code</li>
+                        <li>Add verbose output to symbol table operations for debugging</li>
+                        <li>Start simple and incrementally add complexity</li>
+                    </ol>
+                </div>
+            </div>
+
+            <h2>Implementation Checklist</h2>
+            <p>Use this checklist to track your progress through the project:</p>
+
+            <div class="task-card">
+                <h3>Phase 1: Lexical & Syntactic Analysis</h3>
+                <ul class="checklist">
+                    <li>Add new tokens to scanner.l (return, void, {, }, comma)</li>
+                    <li>Add function declaration grammar rules to parser.y</li>
+                    <li>Add parameter list grammar rules to parser.y</li>
+                    <li>Add return statement grammar rules to parser.y</li>
+                    <li>Add function call grammar rules to parser.y</li>
+                    <li>Update %union and %type declarations in parser.y</li>
+                    <li>Test: Verify parser accepts function declarations without errors</li>
+                </ul>
+            </div>
+
+            <div class="task-card">
+                <h3>Phase 2: AST Construction</h3>
+                <ul class="checklist">
+                    <li>Add new node types to NodeType enum in ast.h</li>
+                    <li>Extend ASTNode union with function-related structures in ast.h</li>
+                    <li>Implement createFuncDecl() in ast.c</li>
+                    <li>Implement createFuncCall() in ast.c</li>
+                    <li>Implement createParam() and createParamList() in ast.c</li>
+                    <li>Implement createReturn() in ast.c</li>
+                    <li>Update printAST() to display new node types</li>
+                    <li>Test: Print AST for simple function and verify structure</li>
+                </ul>
+            </div>
+
+            <div class="task-card">
+                <h3>Phase 3: Semantic Analysis (Symbol Table)</h3>
+                <ul class="checklist">
+                    <li>Design and implement Scope structure in symtab.h</li>
+                    <li>Implement enterScope() and exitScope() in symtab.c</li>
+                    <li>Implement addFunction() for function declarations</li>
+                    <li>Implement addParameter() for function parameters</li>
+                    <li>Update lookupSymbol() to search scope hierarchy</li>
+                    <li>Add semantic checking for function calls (correct parameters)</li>
+                    <li>Add semantic checking for return types</li>
+                    <li>Test: Verify scope isolation between functions</li>
+                    <li>Test: Verify parameter shadowing works correctly</li>
+                </ul>
+            </div>
+
+            <div class="task-card">
+                <h3>Phase 4: Intermediate Code Generation</h3>
+                <ul class="checklist">
+                    <li>Add new TAC operations to TACOp enum in tac.h</li>
+                    <li>Update TACInstr structure if needed</li>
+                    <li>Implement TAC generation for function declarations</li>
+                    <li>Implement TAC generation for function calls</li>
+                    <li>Implement TAC generation for parameter passing</li>
+                    <li>Implement TAC generation for return statements</li>
+                    <li>Update printTAC() to display new instruction types</li>
+                    <li>Test: Verify TAC output for simple function calls</li>
+                </ul>
+            </div>
+
+            <div class="task-card">
+                <h3>Phase 5: Optimization</h3>
+                <ul class="checklist">
+                    <li>Implement dead code elimination after returns</li>
+                    <li>Implement function inlining for small functions</li>
+                    <li>(Optional) Implement tail call optimization</li>
+                    <li>Update printOptimizedTAC() to show optimizations</li>
+                    <li>Test: Compare optimized vs unoptimized TAC</li>
+                </ul>
+            </div>
+
+            <div class="task-card">
+                <h3>Phase 6: Code Generation</h3>
+                <ul class="checklist">
+                    <li>Implement function prologue generation</li>
+                    <li>Implement function epilogue generation</li>
+                    <li>Implement parameter passing (first 4 in $a0-$a3)</li>
+                    <li>Implement additional parameters on stack</li>
+                    <li>Implement return value handling ($v0)</li>
+                    <li>Implement function call instruction (jal)</li>
+                    <li>Update stack frame management for nested calls</li>
+                    <li>Handle saving/restoring $ra for nested calls</li>
+                    <li>Test: Run generated MIPS in simulator</li>
+                    <li>Test: Verify correct output for all test programs</li>
+                </ul>
+            </div>
+
+            <h2>Common Challenges & Solutions</h2>
+
+            <div class="task-card">
+                <h3>Challenge 1: Stack Pointer Management</h3>
+                <p><strong>Problem:</strong> Stack pointer gets out of sync, causing memory corruption or incorrect variable access.</p>
+                <p><strong>Solution:</strong></p>
+                <ul>
+                    <li>Keep careful track of all stack adjustments</li>
+                    <li>Ensure every <code>addi $sp, $sp, -N</code> has a corresponding <code>addi $sp, $sp, N</code></li>
+                    <li>Draw stack diagrams for each function call</li>
+                    <li>Add comments in generated code showing stack layout</li>
+                </ul>
+            </div>
+
+            <div class="task-card">
+                <h3>Challenge 2: Return Address Corruption</h3>
+                <p><strong>Problem:</strong> Nested function calls overwrite $ra, causing program to return to wrong location.</p>
+                <p><strong>Solution:</strong></p>
+                <ul>
+                    <li>Always save $ra in function prologue before any function calls</li>
+                    <li>Restore $ra in epilogue before <code>jr $ra</code></li>
+                    <li>For leaf functions (no calls), you can skip saving $ra</li>
+                </ul>
+            </div>
+
+            <div class="task-card">
+                <h3>Challenge 3: Scope Lookup Errors</h3>
+                <p><strong>Problem:</strong> Variables from wrong scope accessed, or valid variables reported as undeclared.</p>
+                <p><strong>Solution:</strong></p>
+                <ul>
+                    <li>Add extensive logging to symbol table operations</li>
+                    <li>Print current scope depth when adding/looking up symbols</li>
+                    <li>Verify enterScope() and exitScope() called at correct times</li>
+                    <li>Test with programs that deliberately shadow variables</li>
+                </ul>
+            </div>
+
+            <div class="task-card">
+                <h3>Challenge 4: Parameter vs. Local Variable Offsets</h3>
+                <p><strong>Problem:</strong> Parameters and local variables have conflicting stack offsets.</p>
+                <p><strong>Solution:</strong></p>
+                <ul>
+                    <li>Parameters have positive offsets from $fp (they're above the frame)</li>
+                    <li>Local variables have negative offsets from $fp (they're below)</li>
+                    <li>Maintain separate offset counters for parameters and locals</li>
+                </ul>
+            </div>
+
+            <h2>Extension Ideas (Extra Credit)</h2>
+
+            <div class="task-card">
+                <h3>Extension 1: Recursion</h3>
+                <p>Allow functions to call themselves recursively. Test with factorial or fibonacci.</p>
+                <pre><code>int factorial(int n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}</code></pre>
+                <p><strong>Challenges:</strong> Need to implement comparison operators and conditional statements (if) first!</p>
+            </div>
+
+            <div class="task-card">
+                <h3>Extension 2: Forward Declarations</h3>
+                <p>Allow functions to be declared before definition, enabling mutual recursion.</p>
+                <pre><code>int isEven(int n);  // Forward declaration
+
+int isOdd(int n) {
+    if (n == 0) return 0;
+    return isEven(n - 1);
+}
+
+int isEven(int n) {
+    if (n == 0) return 1;
+    return isOdd(n - 1);
+}</code></pre>
+            </div>
+
+            <div class="task-card">
+                <h3>Extension 3: Register Allocation Optimization</h3>
+                <p>Instead of always storing variables on the stack, keep frequently-used variables in registers ($s0-$s7 for saved values).</p>
+                <p><strong>Technique:</strong> Build interference graph, perform graph coloring for register allocation.</p>
+            </div>
+
+            <div class="task-card">
+                <h3>Extension 4: Varargs Functions</h3>
+                <p>Support variable number of arguments like printf.</p>
+                <pre><code>void printMany(int count, ...);
+
+int main() {
+    printMany(3, 10, 20, 30);
+    return 0;
+}</code></pre>
+            </div>
+
+            <h2>Resources & References</h2>
+
+            <div class="task-card">
+                <h3>Documentation</h3>
+                <ul>
+                    <li><strong>MIPS Calling Convention:</strong> SPIM reference manual, Chapter 4</li>
+                    <li><strong>Flex/Bison:</strong> "flex & bison" by John Levine</li>
+                    <li><strong>Compiler Design:</strong> "Compilers: Principles, Techniques, and Tools" (Dragon Book)</li>
+                    <li><strong>Three-Address Code:</strong> Dragon Book, Chapter 6</li>
+                </ul>
+            </div>
+
+            <div class="task-card">
+                <h3>Tools</h3>
+                <ul>
+                    <li><strong>MARS:</strong> MIPS Assembler and Runtime Simulator (for testing MIPS output)</li>
+                    <li><strong>QtSpim:</strong> Alternative MIPS simulator with GUI</li>
+                    <li><strong>GDB:</strong> For debugging your compiler itself</li>
+                    <li><strong>Valgrind:</strong> For detecting memory leaks in your compiler</li>
+                </ul>
+            </div>
+
+            <h2>Deliverables</h2>
+
+            <div class="task-card">
+                <p>Your submission should include:</p>
+                <ol>
+                    <li><strong>Source Code:</strong> All modified .c, .h, .l, and .y files</li>
+                    <li><strong>Makefile:</strong> Updated to compile your extended compiler</li>
+                    <li><strong>Test Files:</strong> At least 5 test programs demonstrating different features</li>
+                    <li><strong>Test Output:</strong> Expected output for each test (both TAC and MIPS assembly)</li>
+                    <li><strong>Documentation:</strong>
+                        <ul>
+                            <li>Brief description of your design decisions</li>
+                            <li>Explanation of your symbol table scope implementation</li>
+                            <li>Description of any optimizations implemented</li>
+                            <li>Known limitations or bugs</li>
+                        </ul>
+                    </li>
+                    <li><strong>Demo Video:</strong> 5-minute video showing your compiler in action</li>
+                </ol>
+            </div>
+
+            <div class="tip-box">
+                <strong>Final Advice:</strong> This is a substantial project! Start early, work incrementally, test frequently, and don't hesitate to ask questions. Compilers are complex, but implementing function support will give you deep insight into how programming languages work at a fundamental level. Good luck!
+            </div>
+
+        </div>
+
+        <footer>
+            <p>CST-405 Compiler Design | Function Extension Activity</p>
+            <p>Focus on understanding the concepts at each phase—successful compilation is the result of careful design across all compiler components.</p>
+        </footer>
+    </div>
+</body>
+</html>

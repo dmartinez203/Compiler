@@ -1,0 +1,119 @@
+
+╔════════════════════════════════════════════════════════════╗
+║          MINIMAL C COMPILER - EDUCATIONAL VERSION          ║
+╚════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────┐
+│ PHASE 1: LEXICAL & SYNTAX ANALYSIS                       │
+├──────────────────────────────────────────────────────────┤
+│ • Reading source file: short_test.c
+│ • Tokenizing input (scanner.l)
+│ • Parsing grammar rules (parser.y)
+│ • Building Abstract Syntax Tree
+└──────────────────────────────────────────────────────────┘
+✓ Parse successful - program is syntactically correct!
+
+┌──────────────────────────────────────────────────────────┐
+│ PHASE 2: ABSTRACT SYNTAX TREE (AST)                      │
+├──────────────────────────────────────────────────────────┤
+│ Tree structure representing the program hierarchy:       │
+└──────────────────────────────────────────────────────────┘
+DECL: a
+DECL: b
+ARRAY_DECL: arr[5]
+ASSIGN TO: a
+  BINOP: +
+    NUM: 7
+    BINOP: *
+      NUM: 3
+      NUM: 2
+ASSIGN TO: b
+  BINOP: /
+    VAR: a
+    BINOP: -
+      NUM: 5
+      NUM: 1
+ARRAY_ASSIGN TO: arr
+   Index:
+    NUM: 0
+   Value:
+    VAR: a
+ARRAY_ASSIGN TO: arr
+   Index:
+    NUM: 1
+   Value:
+    BINOP: *
+      VAR: b
+      NUM: 2
+PRINT
+  VAR: a
+PRINT
+  VAR: b
+PRINT
+  ARRAY_ACCESS: arr
+      Index:
+      NUM: 1
+
+┌──────────────────────────────────────────────────────────┐
+│ PHASE 3: INTERMEDIATE CODE GENERATION                    │
+├──────────────────────────────────────────────────────────┤
+│ Three-Address Code (TAC) - simplified instructions:      │
+│ • Each instruction has at most 3 operands                │
+│ • Temporary variables (t0, t1, ...) for expressions      │
+└──────────────────────────────────────────────────────────┘
+Unoptimized TAC Instructions:
+─────────────────────────────
+ 1: DECL a           // Declare variable 'a'
+ 2: DECL b           // Declare variable 'b'
+ 3: DECL_ARRAY arr[5]   // Declare array 'arr' of size 5
+ 4: t0 = 3 * 2     // Multiply: store result in t0
+ 5: t1 = 7 + t0     // Add: store result in t1
+ 6: a = t1           // Assign value to a
+ 7: t2 = 5 - 1     // Subtract: store result in t2
+ 8: t3 = a / t2     // Divide: store result in t3
+ 9: b = t3           // Assign value to b
+10: arr[0] = a       // Store value in array 'arr'
+11: t4 = b * 2     // Multiply: store result in t4
+12: arr[1] = t4       // Store value in array 'arr'
+13: PRINT a           // Output value of a
+14: PRINT b           // Output value of b
+15: t5 = arr[1]       // Load value from array 'arr'
+16: PRINT t5           // Output value of t5
+
+┌──────────────────────────────────────────────────────────┐
+│ PHASE 4: CODE OPTIMIZATION                               │
+├──────────────────────────────────────────────────────────┤
+│ Applying optimizations:                                  │
+│ • Constant folding (evaluate compile-time expressions)   │
+│ • Copy propagation (replace variables with values)       │
+└──────────────────────────────────────────────────────────┘
+
+Optimized TAC Instructions:
+───────────────────────────
+ 1: DECL a
+ 2: DECL b
+ 3: DECL_ARRAY arr[5]
+ 4: a = 13
+ 5: b = 3
+ 6: arr[0] = a
+ 7: t4 = 6
+ 8: arr[1] = t4
+ 9: PRINT 13
+10: PRINT 3
+11: t5 = arr[1]
+12: PRINT t5
+
+┌──────────────────────────────────────────────────────────┐
+│ PHASE 5: MIPS CODE GENERATION                            │
+├──────────────────────────────────────────────────────────┤
+│ Translating to MIPS assembly:                            │
+│ • Variables stored on stack                              │
+│ • Using $t0-$t7 for temporary values                     │
+│ • System calls for print operations                      │
+└──────────────────────────────────────────────────────────┘
+✓ MIPS assembly code generated to: short_test.s
+
+╔════════════════════════════════════════════════════════════╗
+║                  COMPILATION SUCCESSFUL!                   ║
+║         Run the output file in a MIPS simulator            ║
+╚════════════════════════════════════════════════════════════╝
