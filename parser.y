@@ -26,17 +26,19 @@ ASTNode* root = NULL;          /* Root of the Abstract Syntax Tree */
  */
 %union {
     int num;                /* For integer literals */
+    double fnum;            /* For float literals */
     char* str;              /* For identifiers */
     struct ASTNode* node;   /* For AST nodes */
 }
 
 /* TOKEN DECLARATIONS with their semantic value types */
 %token <num> NUM        /* Number token carries an integer value */
+%token <fnum> FNUM      /* Float token carries a double value */
 %token <str> ID         /* Identifier token carries a string */
-%token INT PRINT RETURN FUNC /* Keywords have no semantic value */
+%token INT FLOAT PRINT RETURN FUNC /* Keywords have no semantic value */
 
 /* NON-TERMINAL TYPES - Define what type each grammar rule returns */
-%type <node> program translation_unit top_item stmt_list stmt decl assign expr primary print_stmt func_decl return_stmt
+%type <node> program translation_unit top_item stmt_list stmt decl assign expr primary print_stmt func_decl return_stmt param_list arg_list
 
 /* OPERATOR PRECEDENCE AND ASSOCIATIVITY */
 %left '+'  /* Addition is left-associative: a+b+c = (a+b)+c */
@@ -92,12 +94,18 @@ decl:
         $$ = createDecl($2);
         free($2);
     }
+    | FLOAT ID ';' {
+        /* Create declaration node for a float variable */
+        $$ = createDeclFloat($2);
+        free($2);
+    }
     | INT ID '[' NUM ']' ';' { 
         /* Create declaration node for an array */
         $$ = createArrayDecl($2, $4); /* NOTE: New AST function needed */
         free($2);
     }
     ;
+
 /* ASSIGNMENT RULE - "x = expr;" or "arr[i] = expr;" */
 assign:
     ID '=' expr ';' { 
@@ -123,10 +131,16 @@ expr:
 
 primary:
     NUM { $$ = createNum($1); }
+    | FNUM { $$ = createFloat($1); }
     | ID { $$ = createVar($1); free($1); }
     | ID '[' expr ']' { $$ = createArrayAccess($1, $3); free($1); }
     | ID '(' ')' { $$ = createFuncCall($1, NULL); free($1); }
+    | ID '(' arg_list ')' { $$ = createFuncCall($1, $3); free($1); }
     | '(' expr ')' { $$ = $2; }
+    ;
+arg_list:
+    expr { $$ = createArgList($1); }
+    | arg_list ',' expr { $$ = appendArg($1, $3); }
     ;
 /* PRINT STATEMENT - "print(expr);" */
 print_stmt:
@@ -143,6 +157,17 @@ func_decl:
         $$ = createFuncDecl($2, NULL, $6, NULL);
         free($2);
     }
+    | FUNC ID '(' param_list ')' '{' stmt_list '}' {
+        $$ = createFuncDecl($2, $4, $7, NULL);
+        free($2);
+    }
+    ;
+
+param_list:
+    INT ID { $$ = createParamList($2, TYPE_INT); free($2); }
+    | FLOAT ID { $$ = createParamList($2, TYPE_FLOAT); free($2); }
+    | param_list ',' INT ID { $$ = appendParam($1, $4, TYPE_INT); free($4); }
+    | param_list ',' FLOAT ID { $$ = appendParam($1, $4, TYPE_FLOAT); free($4); }
     ;
 
 return_stmt:

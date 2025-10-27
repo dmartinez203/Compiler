@@ -102,12 +102,40 @@ void genStmt(ASTNode* node) {
         case NODE_FUNC_DECL: {
             /* Emit function label */
             fprintf(output, "%s:\n", node->data.func_decl.name);
+            /* Enter function scope */
+            pushScope(node->data.func_decl.name);
             /* Prologue: save return address and frame (minimal) */
             fprintf(output, "    addi $sp, $sp, -8\n");
             fprintf(output, "    sw $ra, 4($sp)\n");
             fprintf(output, "    sw $fp, 0($sp)\n");
             /* Set new frame pointer */
             fprintf(output, "    addi $fp, $sp, 8\n");
+            /* Parameters: allocate locals and copy from caller stack into locals
+               Calling convention used by this compiler:
+                 - Caller pushes args left-to-right, so the last argument is on top
+                 - Callee sets $fp = caller's $sp (before pushing RA/FP), so
+                   at entry: argN at 0($fp), argN-1 at 4($fp), ...
+            */
+            if (node->data.func_decl.params) {
+                /* Count params */
+                int count = 0;
+                ASTNode* p = node->data.func_decl.params;
+                while (p) { count++; p = p->data.param_list.next; }
+                /* Copy into locals in declared order */
+                int index = 0;
+                p = node->data.func_decl.params;
+                while (p) {
+                    const char* pname = p->data.param_list.name;
+                    int localOff = addVar((char*)pname);
+                    /* source offset relative to $fp */
+                    int srcOff = (count - 1 - index) * 4;
+                    fprintf(output, "    lw $t%d, %d($fp)\n", getNextTemp(), srcOff);
+                    fprintf(output, "    sw $t%d, %d($sp)\n", tempReg - 1, localOff);
+                    tempReg = 0;
+                    index++;
+                    p = p->data.param_list.next;
+                }
+            }
             /* Body */
             genStmt(node->data.func_decl.body);
             /* If function has return expression node, evaluate and move to $v0 */
@@ -122,6 +150,8 @@ void genStmt(ASTNode* node) {
             fprintf(output, "    lw $ra, 4($sp)\n");
             fprintf(output, "    addi $sp, $sp, 8\n");
             fprintf(output, "    jr $ra\n");
+            /* Exit function scope */
+            popScope();
             break;
         }
         case NODE_FUNC_CALL: {

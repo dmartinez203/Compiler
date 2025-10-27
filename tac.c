@@ -60,6 +60,11 @@ char* generateTACExpr(ASTNode* node) {
             sprintf(temp, "%d", node->data.num);
             return temp;
         }
+        case NODE_FNUM: {
+            char* temp = malloc(32);
+            sprintf(temp, "%g", node->data.fnum);
+            return temp;
+        }
         
         case NODE_VAR:
             return strdup(node->data.name);

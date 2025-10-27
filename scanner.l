@@ -15,6 +15,7 @@
 %%
 
 "int"           { return INT; }
+"float"         { return FLOAT; }
 "func"          { return FUNC; }
 "print"         { return PRINT; }
 "return"        { return RETURN; }
@@ -22,6 +23,11 @@
 [a-zA-Z_][a-zA-Z0-9_]* { 
     yylval.str = strdup(yytext);
     return ID; 
+}
+
+[0-9]+\.[0-9]*|\.[0-9]+   { 
+    yylval.fnum = atof(yytext);
+    return FNUM; 
 }
 
 [0-9]+          { 
@@ -41,6 +47,7 @@
 "]"             { return ']'; }
 "{"             { return '{'; }
 "}"             { return '}'; }
+","             { return ','; }
 
 [ \t\n]         { }
 

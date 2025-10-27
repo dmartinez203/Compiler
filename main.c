@@ -7,6 +7,7 @@
 #include "ast.h"
 #include "codegen.h"
 #include "tac.h"
+#include "symtab.h"
 
 int yydebug = 0; /* Bison parser debug flag (defined here for linking) */
 
@@ -91,9 +92,18 @@ int main(int argc, char* argv[]) {
         printf("│ • Using $t0-$t7 for temporary values                     │\n");
         printf("│ • System calls for print operations                      │\n");
         printf("└──────────────────────────────────────────────────────────┘\n");
-        generateMIPS(root, argv[2]);
-        printf("✓ MIPS assembly code generated to: %s\n", argv[2]);
-        printf("\n");
+    generateMIPS(root, argv[2]);
+    printf("✓ MIPS assembly code generated to: %s\n", argv[2]);
+    printf("\n");
+
+    /* PHASE 6: Symbol Table Snapshot */
+    printf("┌──────────────────────────────────────────────────────────┐\n");
+    printf("│ PHASE 6: SYMBOL TABLE                                   │\n");
+    printf("├──────────────────────────────────────────────────────────┤\n");
+    printf("│ Variables and arrays allocated on the stack:             │\n");
+    printf("└──────────────────────────────────────────────────────────┘\n");
+    /* Symbol table is populated during code generation */
+    printSymTab();
         
         printf("╔════════════════════════════════════════════════════════════╗\n");
         printf("║                  COMPILATION SUCCESSFUL!                   ║\n");

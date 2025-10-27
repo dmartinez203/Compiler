@@ -2,9 +2,9 @@
 #define SYMTAB_H
 
 /* SYMBOL TABLE
- * Tracks all declared variables during compilation
- * Maps variable names to their memory locations (stack offsets)
- * Used for semantic checking and code generation
+ * Tracks declared identifiers during compilation.
+ * In this educational compiler, we map variable names to stack offsets.
+ * Scope management is supported via a simple scope stack (global + per function).
  */
 
 #define MAX_VARS 1000000  /* Maximum number of variables supported */
@@ -27,8 +27,11 @@ typedef struct {
 
 /* SYMBOL TABLE OPERATIONS */
 void initSymTab();               /* Initialize empty symbol table */
+void pushScope(const char* name);/* Enter a new lexical scope (e.g., function) */
+void popScope();                 /* Exit current scope */
 int addVar(char* name);          /* Add new variable, returns offset or -1 if duplicate */
 int getVarOffset(char* name);    /* Get stack offset for variable, -1 if not found */
 int isVarDeclared(char* name);   /* Check if variable exists (1=yes, 0=no) */
+void printSymTab();              /* Debug: print current symbol table contents */
 
 #endif

@@ -40,20 +40,24 @@
       know about them.  */
    enum yytokentype {
      NUM = 258,
-     ID = 259,
-     INT = 260,
-     PRINT = 261,
-     RETURN = 262,
-     FUNC = 263
+     FNUM = 259,
+     ID = 260,
+     INT = 261,
+     FLOAT = 262,
+     PRINT = 263,
+     RETURN = 264,
+     FUNC = 265
    };
 #endif
 /* Tokens.  */
 #define NUM 258
-#define ID 259
-#define INT 260
-#define PRINT 261
-#define RETURN 262
-#define FUNC 263
+#define FNUM 259
+#define ID 260
+#define INT 261
+#define FLOAT 262
+#define PRINT 263
+#define RETURN 264
+#define FUNC 265
 
 
 
@@ -63,11 +67,12 @@ typedef union YYSTYPE
 #line 27 "parser.y"
 {
     int num;                /* For integer literals */
+    double fnum;            /* For float literals */
     char* str;              /* For identifiers */
     struct ASTNode* node;   /* For AST nodes */
 }
 /* Line 1529 of yacc.c.  */
-#line 71 "parser.tab.h"
+#line 76 "parser.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1

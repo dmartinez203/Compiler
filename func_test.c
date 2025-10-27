@@ -1,5 +1,7 @@
-func inc() { return 6; }
-int main; 
-main = 0;
-main = inc();
-print(main);
+func add() { return 2 + 3; }
+
+func inc() { return 5 + 1; }
+
+int a;
+a = add();
+print(inc());

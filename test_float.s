@@ -6,7 +6,6 @@ main:
     # Allocate stack space
     addi $sp, $sp, -400
 
-    # Declared i at offset 0
     # Print integer
     move $a0, $t-1
     li $v0, 1
