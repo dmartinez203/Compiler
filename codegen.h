@@ -3,6 +3,9 @@
 
 #include "ast.h"
 
-void generateMIPS(ASTNode* root, const char* filename);
+/* UPDATED: The new code generator reads from the TAC list, not the AST,
+   so it no longer needs the root node. */
+void generateMIPS(const char* filename);
 
 #endif
+

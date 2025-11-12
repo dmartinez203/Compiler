@@ -19,18 +19,21 @@
 "func"          { return FUNC; }
 "print"         { return PRINT; }
 "return"        { return RETURN; }
+"if"            { return IF; }
+"when"          { return IF; }
+"else"          { return ELSE; }
 
 [a-zA-Z_][a-zA-Z0-9_]* { 
     yylval.str = strdup(yytext);
     return ID; 
 }
 
-[0-9]+\.[0-9]*|\.[0-9]+   { 
-    yylval.fnum = atof(yytext);
-    return FNUM; 
+[0-9][0-9]*\.[0-9][0-9]* { 
+    yylval.fnum = atof(yytext); 
+    return FLOAT_LITERAL; 
 }
 
-[0-9]+          { 
+[0-9][0-9]* { 
     yylval.num = atoi(yytext);
     return NUM; 
 }
@@ -47,7 +50,15 @@
 "]"             { return ']'; }
 "{"             { return '{'; }
 "}"             { return '}'; }
-","             { return ','; }
+"=="            { return EQ; }
+"!="            { return NE; }
+"<"             { return LT; }
+"<="            { return LE; }
+">"             { return GT; }
+">="            { return GE; }
+"&&"            { return AND; }
+"||"            { return OR; }
+"!"             { return NOT; }
 
 [ \t\n]         { }
 
@@ -59,3 +70,4 @@
 int yywrap() {
     return 1;  /* 1 means no more input files */
 }
+

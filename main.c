@@ -7,13 +7,16 @@
 #include "ast.h"
 #include "codegen.h"
 #include "tac.h"
-#include "symtab.h"
 
-int yydebug = 0; /* Bison parser debug flag (defined here for linking) */
+/* UPDATED: This definition conflicts with the one in parser.tab.c
+ * We now declare it as extern below.
+ */
+/* int yydebug = 0; */ 
 
 extern int yyparse();
 extern FILE* yyin;
 extern ASTNode* root;
+extern int yydebug; /* NEW: Declare yydebug as external */
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
@@ -44,7 +47,10 @@ int main(int argc, char* argv[]) {
     printf("│ • Building Abstract Syntax Tree\n");
     printf("└──────────────────────────────────────────────────────────┘\n");
     
-    extern int yydebug;
+    /* UPDATED: We just declare yydebug as extern at the top of the file now.
+     * We can just set it here.
+     */
+    /* extern int yydebug; */ 
     yydebug = 1; /* Enable parser debug output */
     if (yyparse() == 0) {
         printf("✓ Parse successful - program is syntactically correct!\n\n");
@@ -67,7 +73,7 @@ int main(int argc, char* argv[]) {
         printf("│ • Temporary variables (t0, t1, ...) for expressions      │\n");
         printf("└──────────────────────────────────────────────────────────┘\n");
         initTAC();
-        generateTAC(root);
+        generateTAC(root); /* Generate TAC from the AST */
         printTAC();
         printf("\n");
         
@@ -79,7 +85,7 @@ int main(int argc, char* argv[]) {
         printf("│ • Constant folding (evaluate compile-time expressions)   │\n");
         printf("│ • Copy propagation (replace variables with values)       │\n");
         printf("└──────────────────────────────────────────────────────────┘\n");
-        optimizeTAC();
+        optimizeTAC(); /* Optimize the TAC list */
         printOptimizedTAC();
         printf("\n");
         
@@ -92,18 +98,12 @@ int main(int argc, char* argv[]) {
         printf("│ • Using $t0-$t7 for temporary values                     │\n");
         printf("│ • System calls for print operations                      │\n");
         printf("└──────────────────────────────────────────────────────────┘\n");
-    generateMIPS(root, argv[2]);
-    printf("✓ MIPS assembly code generated to: %s\n", argv[2]);
-    printf("\n");
-
-    /* PHASE 6: Symbol Table Snapshot */
-    printf("┌──────────────────────────────────────────────────────────┐\n");
-    printf("│ PHASE 6: SYMBOL TABLE                                   │\n");
-    printf("├──────────────────────────────────────────────────────────┤\n");
-    printf("│ Variables and arrays allocated on the stack:             │\n");
-    printf("└──────────────────────────────────────────────────────────┘\n");
-    /* Symbol table is populated during code generation */
-    printSymTab();
+        
+        /* UPDATED: Call new generateMIPS, which reads from the global TAC list */
+        generateMIPS(argv[2]); 
+        
+        printf("✓ MIPS assembly code generated to: %s\n", argv[2]);
+        printf("\n");
         
         printf("╔════════════════════════════════════════════════════════════╗\n");
         printf("║                  COMPILATION SUCCESSFUL!                   ║\n");
@@ -121,3 +121,5 @@ int main(int argc, char* argv[]) {
     fclose(yyin);
     return 0;
 }
+
+

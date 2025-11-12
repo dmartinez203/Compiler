@@ -2,17 +2,23 @@
 #define SYMTAB_H
 
 /* SYMBOL TABLE
- * Tracks declared identifiers during compilation.
- * In this educational compiler, we map variable names to stack offsets.
- * Scope management is supported via a simple scope stack (global + per function).
+ * Tracks all declared variables during compilation
+ * Maps variable names to their memory locations (stack offsets)
+ * Used for semantic checking and code generation
  */
 
 #define MAX_VARS 1000000  /* Maximum number of variables supported */
 
+/* NEW: Data type enum */
+typedef enum {
+    TYPE_INT,
+    TYPE_FLOAT
+} DataType;
+
 /* SYMBOL ENTRY - Information about each variable */
-// In symtab.h
 typedef struct {
     char* name;         /* Variable name */
+    DataType type;      /* NEW: Store the type */
     int offset;         /* Stack offset */
     int isArray;        /* Flag: 1 if it's an array, 0 otherwise */
     int arraySize;      /* Number of elements if it's an array */
@@ -26,12 +32,12 @@ typedef struct {
 } SymbolTable;
 
 /* SYMBOL TABLE OPERATIONS */
-void initSymTab();               /* Initialize empty symbol table */
-void pushScope(const char* name);/* Enter a new lexical scope (e.g., function) */
-void popScope();                 /* Exit current scope */
-int addVar(char* name);          /* Add new variable, returns offset or -1 if duplicate */
-int getVarOffset(char* name);    /* Get stack offset for variable, -1 if not found */
-int isVarDeclared(char* name);   /* Check if variable exists (1=yes, 0=no) */
-void printSymTab();              /* Debug: print current symbol table contents */
+void initSymTab();                                  /* Initialize empty symbol table */
+int addVar(char* name, DataType type);              /* UPDATED: Add new variable with type */
+int addArray(char* name, DataType type, int size);  /* UPDATED: Add new array with type */
+int getVarOffset(char* name);                       /* Get stack offset for variable, -1 if not found */
+DataType getVarType(char* name);                    /* NEW: Get the type of a variable */
+int isVarDeclared(char* name);                      /* Check if variable exists (1=yes, 0=no) */
 
 #endif
+

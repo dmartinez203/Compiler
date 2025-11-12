@@ -8,11 +8,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ast.h"
+#include "symtab.h" /* NEW: Include for data types */
 
 /* External declarations for lexer interface */
 extern int yylex();      /* Get next token from scanner */
 extern int yyparse();    /* Parse the entire input */
 extern FILE* yyin;       /* Input file handle */
+extern int yydebug;      /* NEW: Fix for multiple definition error */
 
 void yyerror(const char* s);  /* Error handling function */
 ASTNode* root = NULL;          /* Root of the Abstract Syntax Tree */
@@ -26,23 +28,31 @@ ASTNode* root = NULL;          /* Root of the Abstract Syntax Tree */
  */
 %union {
     int num;                /* For integer literals */
-    double fnum;            /* For float literals */
+    double fnum;            /* NEW: For float literals */
     char* str;              /* For identifiers */
     struct ASTNode* node;   /* For AST nodes */
 }
 
 /* TOKEN DECLARATIONS with their semantic value types */
-%token <num> NUM        /* Number token carries an integer value */
-%token <fnum> FNUM      /* Float token carries a double value */
-%token <str> ID         /* Identifier token carries a string */
-%token INT FLOAT PRINT RETURN FUNC /* Keywords have no semantic value */
+%token <num> NUM                 /* Number token carries an integer value */
+%token <fnum> FLOAT_LITERAL    /* NEW: Float literal token */
+%token <str> ID                  /* Identifier token carries a string */
+%token INT FLOAT PRINT IF ELSE
+%token EQ NE LT LE GT GE
+%token AND OR NOT
+%token RETURN FUNC /* Keywords have no semantic value */
 
 /* NON-TERMINAL TYPES - Define what type each grammar rule returns */
-%type <node> program translation_unit top_item stmt_list stmt decl assign expr primary print_stmt func_decl return_stmt param_list arg_list
+%type <node> program translation_unit top_item stmt_list stmt decl assign expr primary print_stmt func_decl return_stmt if_stmt condition logical_expr
 
 /* OPERATOR PRECEDENCE AND ASSOCIATIVITY */
-%left '+'  /* Addition is left-associative: a+b+c = (a+b)+c */
-%left '*' '/' /* Multiply and divide (higher precedence than + and -) */
+%right '!'
+%left OR
+%left AND
+%left EQ NE
+%left LT LE GT GE
+%left '+' '-'
+%left '*' '/'
 
 %%
 
@@ -79,33 +89,39 @@ top_item:
     | func_decl { $$ = $1; }
     ;
 
-/* STATEMENT TYPES - The three kinds of statements we support */
+/* STATEMENT TYPES - The kinds of statements we support */
 stmt:
     decl        /* Variable declaration */
     | assign    /* Assignment statement */
     | print_stmt /* Print statement */
     | return_stmt /* Return statement (inside functions) */
+    | if_stmt   /* If statement */
+    | expr ';'  /* Expression statement (e.g., function calls) */
     ;
 
 /* DECLARATION RULE - "int x;" or "int arr[10];" */
 decl:
     INT ID ';' { 
-        /* Create declaration node for a regular variable */
-        $$ = createDecl($2);
+        /* UPDATED: Pass type to createDecl */
+        $$ = createDecl(TYPE_INT, $2);
         free($2);
     }
     | FLOAT ID ';' {
-        /* Create declaration node for a float variable */
-        $$ = createDeclFloat($2);
+        /* NEW: float x; */
+        $$ = createDecl(TYPE_FLOAT, $2);
         free($2);
     }
     | INT ID '[' NUM ']' ';' { 
-        /* Create declaration node for an array */
-        $$ = createArrayDecl($2, $4); /* NOTE: New AST function needed */
+        /* UPDATED: Pass type to createArrayDecl */
+        $$ = createArrayDecl(TYPE_INT, $2, $4);
+        free($2);
+    }
+    | FLOAT ID '[' NUM ']' ';' {
+        /* NEW: float arr[10]; */
+        $$ = createArrayDecl(TYPE_FLOAT, $2, $4);
         free($2);
     }
     ;
-
 /* ASSIGNMENT RULE - "x = expr;" or "arr[i] = expr;" */
 assign:
     ID '=' expr ';' { 
@@ -115,7 +131,7 @@ assign:
     }
     | ID '[' expr ']' '=' expr ';' { 
         /* Create assignment node for an array element */
-        $$ = createArrayAssign($1, $3, $6); /* NOTE: New AST function needed */
+        $$ = createArrayAssign($1, $3, $6);
         free($1);
     }
     ;
@@ -131,16 +147,11 @@ expr:
 
 primary:
     NUM { $$ = createNum($1); }
-    | FNUM { $$ = createFloat($1); }
+    | FLOAT_LITERAL { $$ = createFloatNum($1); } /* NEW: Float literal */
     | ID { $$ = createVar($1); free($1); }
     | ID '[' expr ']' { $$ = createArrayAccess($1, $3); free($1); }
     | ID '(' ')' { $$ = createFuncCall($1, NULL); free($1); }
-    | ID '(' arg_list ')' { $$ = createFuncCall($1, $3); free($1); }
     | '(' expr ')' { $$ = $2; }
-    ;
-arg_list:
-    expr { $$ = createArgList($1); }
-    | arg_list ',' expr { $$ = appendArg($1, $3); }
     ;
 /* PRINT STATEMENT - "print(expr);" */
 print_stmt:
@@ -157,21 +168,39 @@ func_decl:
         $$ = createFuncDecl($2, NULL, $6, NULL);
         free($2);
     }
-    | FUNC ID '(' param_list ')' '{' stmt_list '}' {
-        $$ = createFuncDecl($2, $4, $7, NULL);
-        free($2);
-    }
-    ;
-
-param_list:
-    INT ID { $$ = createParamList($2, TYPE_INT); free($2); }
-    | FLOAT ID { $$ = createParamList($2, TYPE_FLOAT); free($2); }
-    | param_list ',' INT ID { $$ = appendParam($1, $4, TYPE_INT); free($4); }
-    | param_list ',' FLOAT ID { $$ = appendParam($1, $4, TYPE_FLOAT); free($4); }
     ;
 
 return_stmt:
     RETURN expr ';' { $$ = createReturn($2); }
+    ;
+
+/* IF STATEMENT - supports if and if-else */
+if_stmt:
+    IF '(' logical_expr ')' '{' stmt_list '}' {
+        $$ = createIf($3, $6, NULL);
+    }
+    | IF '(' logical_expr ')' '{' stmt_list '}' ELSE '{' stmt_list '}' {
+        $$ = createIf($3, $6, $10);
+    }
+    ;
+
+/* LOGICAL EXPRESSIONS - Boolean operations with proper precedence */
+logical_expr:
+    condition { $$ = $1; }
+    | logical_expr AND logical_expr { $$ = createLogicOp("&&", $1, $3); }
+    | logical_expr OR logical_expr { $$ = createLogicOp("||", $1, $3); }
+    | NOT logical_expr { $$ = createUnaryOp("!", $2); }
+    | '(' logical_expr ')' { $$ = $2; }
+    ;
+
+/* CONDITION - relational expressions */
+condition:
+    expr EQ expr { $$ = createRelOp("==", $1, $3); }
+    | expr NE expr { $$ = createRelOp("!=", $1, $3); }
+    | expr LT expr { $$ = createRelOp("<", $1, $3); }
+    | expr LE expr { $$ = createRelOp("<=", $1, $3); }
+    | expr GT expr { $$ = createRelOp(">", $1, $3); }
+    | expr GE expr { $$ = createRelOp(">=", $1, $3); }
     ;
 
 %%
@@ -180,3 +209,5 @@ return_stmt:
 void yyerror(const char* s) {
     fprintf(stderr, "Syntax Error: %s\n", s);
 }
+
+

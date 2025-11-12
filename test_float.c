@@ -1,2 +1,3 @@
 float x;
-print(3.14);
+x = 7.0 / 2;
+print(x);

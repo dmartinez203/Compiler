@@ -7,6 +7,15 @@
 #include <string.h>
 #include "ast.h"
 
+/* NEW: Helper function to print data types */
+static const char* typeToString(DataType type) {
+    switch (type) {
+        case TYPE_INT:   return "int";
+        case TYPE_FLOAT: return "float";
+        default:         return "unknown";
+    }
+}
+
 /* Create a number literal node */
 ASTNode* createNum(int value) {
     ASTNode* node = malloc(sizeof(ASTNode));
@@ -15,10 +24,10 @@ ASTNode* createNum(int value) {
     return node;
 }
 
-/* Create a float literal node */
-ASTNode* createFloat(double value) {
+/* NEW: Create a float literal node */
+ASTNode* createFloatNum(double value) {
     ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = NODE_FNUM;
+    node->type = NODE_FLOAT_NUM;
     node->data.fnum = value;
     return node;
 }
@@ -41,19 +50,12 @@ ASTNode* createBinOp(char op, ASTNode* left, ASTNode* right) {
     return node;
 }
 
-/* Create a variable declaration node */
-ASTNode* createDecl(char* name) {
+/* UPDATED: Create a variable declaration node */
+ASTNode* createDecl(DataType type, char* name) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = NODE_DECL;
-    node->data.name = strdup(name);  /* Store variable name */
-    return node;
-}
-
-/* Create a float variable declaration node */
-ASTNode* createDeclFloat(char* name) {
-    ASTNode* node = malloc(sizeof(ASTNode));
-    node->type = NODE_DECL_FLOAT;
-    node->data.decl_float.name = strdup(name);
+    node->data.decl.type = type; /* Store type */
+    node->data.decl.name = strdup(name);
     return node;
 }
 
@@ -74,10 +76,11 @@ ASTNode* createPrint(ASTNode* expr) {
     return node;
 }
 
-/* Create an array declaration node */
-ASTNode* createArrayDecl(char* name, int size) {
+/* UPDATED: Create an array declaration node */
+ASTNode* createArrayDecl(DataType type, char* name, int size) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = NODE_ARRAY_DECL;
+    node->data.array_decl.type = type; /* Store type */
     node->data.array_decl.name = strdup(name); /* Array name */
     node->data.array_decl.size = size;         /* Array size */
     return node;
@@ -101,19 +104,6 @@ ASTNode* createArrayAccess(char* name, ASTNode* index) {
     node->data.array_access.index = index;       /* Index expression */
     return node;
 }
-
-
-/*
- * Example helper (commented out):
- *
- * ASTNode* createDeclWithAssgn(char* name, int value) {
- *     ASTNode* node = malloc(sizeof(ASTNode));
- *     node->type = NODE_DECL;
- *     node->data.name = strdup(name);
- *     // To add an assignment you'd create an assignment node and link it
- *     return node;
- * }
- */
 
 /* Create a statement list node (links statements together) */
 ASTNode* createStmtList(ASTNode* stmt1, ASTNode* stmt2) {
@@ -145,20 +135,19 @@ ASTNode* createFuncCall(char* name, ASTNode* args) {
 }
 
 /* Parameter list helpers */
-ASTNode* createParamList(char* name, int vtype) {
+ASTNode* createParamList(char* name) {
     ASTNode* node = malloc(sizeof(ASTNode));
     node->type = NODE_PARAM_LIST;
     node->data.param_list.name = strdup(name);
-    node->data.param_list.vtype = vtype;
     node->data.param_list.next = NULL;
     return node;
 }
 
-ASTNode* appendParam(ASTNode* list, char* name, int vtype) {
-    if (!list) return createParamList(name, vtype);
+ASTNode* appendParam(ASTNode* list, char* name) {
+    if (!list) return createParamList(name);
     ASTNode* cur = list;
     while (cur->data.param_list.next) cur = cur->data.param_list.next;
-    ASTNode* n = createParamList(name, vtype);
+    ASTNode* n = createParamList(name);
     cur->data.param_list.next = n;
     return list;
 }
@@ -189,6 +178,45 @@ ASTNode* createReturn(ASTNode* expr) {
     return node;
 }
 
+/* Create an if statement node */
+ASTNode* createIf(ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = NODE_IF;
+    node->data.if_stmt.condition = condition;
+    node->data.if_stmt.then_branch = then_branch;
+    node->data.if_stmt.else_branch = else_branch;  /* Can be NULL for simple if */
+    return node;
+}
+
+/* Create a relational operation node */
+ASTNode* createRelOp(char* op, ASTNode* left, ASTNode* right) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = NODE_RELOP;
+    node->data.relop.op = strdup(op);
+    node->data.relop.left = left;
+    node->data.relop.right = right;
+    return node;
+}
+
+/* Create a logical operation node */
+ASTNode* createLogicOp(char* op, ASTNode* left, ASTNode* right) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = NODE_LOGICOP;
+    node->data.logicop.op = strdup(op);
+    node->data.logicop.left = left;
+    node->data.logicop.right = right;
+    return node;
+}
+
+/* Create a unary operation node */
+ASTNode* createUnaryOp(char* op, ASTNode* operand) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = NODE_UNARYOP;
+    node->data.unaryop.op = strdup(op);
+    node->data.unaryop.operand = operand;
+    return node;
+}
+
 /* Display the AST structure (for debugging and education) */
 void printAST(ASTNode* node, int level) {
     if (!node) return;
@@ -201,8 +229,9 @@ void printAST(ASTNode* node, int level) {
         case NODE_NUM:
             printf("NUM: %d\n", node->data.num);
             break;
-        case NODE_FNUM:
-            printf("FNUM: %g\n", node->data.fnum);
+        /* NEW: Print float literals */
+        case NODE_FLOAT_NUM:
+            printf("FLOAT: %f\n", node->data.fnum);
             break;
         case NODE_VAR:
             printf("VAR: %s\n", node->data.name);
@@ -212,11 +241,9 @@ void printAST(ASTNode* node, int level) {
             printAST(node->data.binop.left, level + 1);
             printAST(node->data.binop.right, level + 1);
             break;
+        /* UPDATED: Print declaration type */
         case NODE_DECL:
-            printf("DECL: %s\n", node->data.name);
-            break;
-        case NODE_DECL_FLOAT:
-            printf("DECL: %s (float)\n", node->data.decl_float.name);
+            printf("DECL: %s (%s)\n", node->data.decl.name, typeToString(node->data.decl.type));
             break;
         case NODE_ASSIGN:
             printf("ASSIGN TO: %s\n", node->data.assign.var);
@@ -231,9 +258,12 @@ void printAST(ASTNode* node, int level) {
             printAST(node->data.stmtlist.next, level);
             break;
         
-        /* --- ADD THESE NEW CASES FOR ARRAYS --- */
+        /* UPDATED: Print array declaration type */
         case NODE_ARRAY_DECL:
-            printf("ARRAY_DECL: %s[%d]\n", node->data.array_decl.name, node->data.array_decl.size);
+            printf("ARRAY_DECL: %s %s[%d]\n", 
+                typeToString(node->data.array_decl.type), 
+                node->data.array_decl.name, 
+                node->data.array_decl.size);
             break;
         case NODE_ARRAY_ASSIGN:
             printf("ARRAY_ASSIGN TO: %s\n", node->data.array_assign.name);
@@ -257,10 +287,7 @@ void printAST(ASTNode* node, int level) {
                 ASTNode* p = node->data.func_decl.params;
                 while (p) {
                     for (int i = 0; i < level + 2; i++) printf("  ");
-                    if (p->data.param_list.vtype == TYPE_FLOAT)
-                        printf("%s: float\n", p->data.param_list.name);
-                    else
-                        printf("%s: int\n", p->data.param_list.name);
+                    printf("%s\n", p->data.param_list.name);
                     p = p->data.param_list.next;
                 }
             }
@@ -286,5 +313,37 @@ void printAST(ASTNode* node, int level) {
             printf("RETURN\n");
             printAST(node->data.return_expr, level + 1);
             break;
+        case NODE_IF:
+            printf("IF\n");
+            for (int i = 0; i < level + 1; i++) printf("  ");
+            printf("Condition:\n");
+            printAST(node->data.if_stmt.condition, level + 2);
+            for (int i = 0; i < level + 1; i++) printf("  ");
+            printf("Then:\n");
+            printAST(node->data.if_stmt.then_branch, level + 2);
+            if (node->data.if_stmt.else_branch) {
+                for (int i = 0; i < level + 1; i++) printf("  ");
+                printf("Else:\n");
+                printAST(node->data.if_stmt.else_branch, level + 2);
+            }
+            break;
+        case NODE_RELOP:
+            printf("RELOP: %s\n", node->data.relop.op);
+            printAST(node->data.relop.left, level + 1);
+            printAST(node->data.relop.right, level + 1);
+            break;
+        case NODE_LOGICOP:
+            printf("LOGICOP: %s\n", node->data.logicop.op);
+            printAST(node->data.logicop.left, level + 1);
+            printAST(node->data.logicop.right, level + 1);
+            break;
+        case NODE_UNARYOP:
+            printf("UNARYOP: %s\n", node->data.unaryop.op);
+            printAST(node->data.unaryop.operand, level + 1);
+            break;
+        default:
+            fprintf(stderr, "Unknown AST node type: %d\n", node->type);
+            break;
     }
 }
+
