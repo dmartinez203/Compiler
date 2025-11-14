@@ -37,13 +37,13 @@ ASTNode* root = NULL;          /* Root of the Abstract Syntax Tree */
 %token <num> NUM                 /* Number token carries an integer value */
 %token <fnum> FLOAT_LITERAL    /* NEW: Float literal token */
 %token <str> ID                  /* Identifier token carries a string */
-%token INT FLOAT PRINT IF ELSE
+%token INT FLOAT PRINT WRITE WRITELN IF ELSE WHILE
 %token EQ NE LT LE GT GE
 %token AND OR NOT
 %token RETURN FUNC /* Keywords have no semantic value */
 
 /* NON-TERMINAL TYPES - Define what type each grammar rule returns */
-%type <node> program translation_unit top_item stmt_list stmt decl assign expr primary print_stmt func_decl return_stmt if_stmt condition logical_expr
+%type <node> program translation_unit top_item stmt_list stmt decl assign expr primary print_stmt write_stmt writeln_stmt func_decl return_stmt if_stmt while_stmt condition logical_expr param_list arg_list
 
 /* OPERATOR PRECEDENCE AND ASSOCIATIVITY */
 %right '!'
@@ -94,8 +94,11 @@ stmt:
     decl        /* Variable declaration */
     | assign    /* Assignment statement */
     | print_stmt /* Print statement */
+    | write_stmt /* Write statement */
+    | writeln_stmt /* Writeln statement */
     | return_stmt /* Return statement (inside functions) */
     | if_stmt   /* If statement */
+    | while_stmt /* While loop */
     | expr ';'  /* Expression statement (e.g., function calls) */
     ;
 
@@ -151,7 +154,18 @@ primary:
     | ID { $$ = createVar($1); free($1); }
     | ID '[' expr ']' { $$ = createArrayAccess($1, $3); free($1); }
     | ID '(' ')' { $$ = createFuncCall($1, NULL); free($1); }
+    | ID '(' arg_list ')' { $$ = createFuncCall($1, $3); free($1); }
     | '(' expr ')' { $$ = $2; }
+    ;
+
+/* ARGUMENT LIST for function calls */
+arg_list:
+    expr {
+        $$ = createArgList($1);
+    }
+    | arg_list ',' expr {
+        $$ = appendArg($1, $3);
+    }
     ;
 /* PRINT STATEMENT - "print(expr);" */
 print_stmt:
@@ -161,12 +175,44 @@ print_stmt:
     }
     ;
 
-/* FUNCTION DECLARATION (minimal) */
+/* WRITE STATEMENT - "write(expr);" */
+write_stmt:
+    WRITE '(' expr ')' ';' { 
+        $$ = createWrite($3);
+    }
+    | WRITE '(' logical_expr ')' ';' { 
+        $$ = createWrite($3);
+    }
+    ;
+
+/* WRITELN STATEMENT - "writeln;" */
+writeln_stmt:
+    WRITELN ';' { 
+        $$ = createWriteln();
+    }
+    ;
+
+/* FUNCTION DECLARATION with optional parameters */
 func_decl:
     FUNC ID '(' ')' '{' stmt_list '}' {
-        /* The function body (stmt_list) may include a return statement */
         $$ = createFuncDecl($2, NULL, $6, NULL);
         free($2);
+    }
+    | FUNC ID '(' param_list ')' '{' stmt_list '}' {
+        $$ = createFuncDecl($2, $4, $7, NULL);
+        free($2);
+    }
+    ;
+
+/* PARAMETER LIST for function declarations */
+param_list:
+    INT ID {
+        $$ = createParamList($2);
+        free($2);
+    }
+    | param_list ',' INT ID {
+        $$ = appendParam($1, $4);
+        free($4);
     }
     ;
 
@@ -181,6 +227,13 @@ if_stmt:
     }
     | IF '(' logical_expr ')' '{' stmt_list '}' ELSE '{' stmt_list '}' {
         $$ = createIf($3, $6, $10);
+    }
+    ;
+
+/* WHILE LOOP - supports while statements */
+while_stmt:
+    WHILE '(' logical_expr ')' '{' stmt_list '}' {
+        $$ = createWhile($3, $6);
     }
     ;
 

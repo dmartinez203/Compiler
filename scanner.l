@@ -18,10 +18,13 @@
 "float"         { return FLOAT; }
 "func"          { return FUNC; }
 "print"         { return PRINT; }
+"write"         { return WRITE; }
+"writeln"       { return WRITELN; }
 "return"        { return RETURN; }
 "if"            { return IF; }
 "when"          { return IF; }
 "else"          { return ELSE; }
+"while"         { return WHILE; }
 
 [a-zA-Z_][a-zA-Z0-9_]* { 
     yylval.str = strdup(yytext);
@@ -31,6 +34,11 @@
 [0-9][0-9]*\.[0-9][0-9]* { 
     yylval.fnum = atof(yytext); 
     return FLOAT_LITERAL; 
+}
+
+'.'             { 
+    yylval.num = (int)yytext[1]; 
+    return NUM; 
 }
 
 [0-9][0-9]* { 
@@ -44,6 +52,7 @@
 "/"             { return '/'; }
 "="             { return '='; }
 ";"             { return ';'; }
+","             { return ','; }
 "("             { return '('; }
 ")"             { return ')'; }
 "["             { return '['; }

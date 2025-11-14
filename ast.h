@@ -19,6 +19,8 @@ typedef enum {
     NODE_DECL,          /* Variable declaration (e.g., int x) */
     NODE_ASSIGN,        /* Assignment statement (e.g., x = 10) */
     NODE_PRINT,         /* Print statement (e.g., print(x)) */
+    NODE_WRITE,         /* Write statement (e.g., write('c') or write(x)) */
+    NODE_WRITELN,       /* Writeln statement (e.g., writeln;) */
     NODE_STMT_LIST,     /* List of statements (program structure) */
     NODE_ARRAY_DECL,    /* Array declaration (e.g., int arr[10]) */
     NODE_ARRAY_ASSIGN,  /* Array element assignment (e.g., arr[0] = 5) */
@@ -29,6 +31,7 @@ typedef enum {
     NODE_ARG_LIST,      /* Argument list for function call */
     NODE_RETURN,        /* Return statement */
     NODE_IF,            /* If statement (if/if-else) */
+    NODE_WHILE,         /* While loop */
     NODE_RELOP,         /* Relational operation (e.g., x < y, x == y) */
     NODE_LOGICOP,       /* Logical operation (e.g., x && y, x || y) */
     NODE_UNARYOP        /* Unary operation (e.g., !x) */
@@ -140,6 +143,12 @@ typedef struct ASTNode {
             struct ASTNode* else_branch;   /* Statements to execute if false (can be NULL) */
         } if_stmt;
         
+        /* While loop (NODE_WHILE) */
+        struct {
+            struct ASTNode* condition;     /* Loop condition expression */
+            struct ASTNode* body;          /* Statements to repeat */
+        } while_stmt;
+        
         /* Relational operation (NODE_RELOP) */
         struct {
             char* op;                      /* Operator string ("==", "!=", "<", "<=", ">", ">=") */
@@ -172,6 +181,8 @@ ASTNode* createBinOp(char op, ASTNode* left, ASTNode* right);   /* Create binary
 ASTNode* createDecl(DataType type, char* name);                  /* UPDATED: Create declaration node */
 ASTNode* createAssign(char* var, ASTNode* value);               /* Create assignment node */
 ASTNode* createPrint(ASTNode* expr);                            /* Create print node */
+ASTNode* createWrite(ASTNode* expr);                            /* Create write node */
+ASTNode* createWriteln();                                       /* Create writeln node */
 ASTNode* createStmtList(ASTNode* stmt1, ASTNode* stmt2);        /* Create statement list */
 ASTNode* createArrayDecl(DataType type, char* name, int size);   /* UPDATED: Create array declaration node */
 ASTNode* createArrayAssign(char* name, ASTNode* index, ASTNode* value);
@@ -184,6 +195,7 @@ ASTNode* createArgList(ASTNode* expr);
 ASTNode* appendArg(ASTNode* list, ASTNode* expr);
 ASTNode* createReturn(ASTNode* expr);
 ASTNode* createIf(ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch);
+ASTNode* createWhile(ASTNode* condition, ASTNode* body);
 ASTNode* createRelOp(char* op, ASTNode* left, ASTNode* right);
 ASTNode* createLogicOp(char* op, ASTNode* left, ASTNode* right);
 ASTNode* createUnaryOp(char* op, ASTNode* operand);

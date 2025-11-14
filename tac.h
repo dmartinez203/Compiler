@@ -20,6 +20,8 @@ typedef enum {
     TAC_DIV,
     TAC_ASSIGN,
     TAC_PRINT,
+    TAC_WRITE,
+    TAC_WRITELN,
     TAC_DECL,
     
     /* NEW: Float Ops */

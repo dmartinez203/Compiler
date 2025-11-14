@@ -76,6 +76,21 @@ ASTNode* createPrint(ASTNode* expr) {
     return node;
 }
 
+/* Create a write statement node */
+ASTNode* createWrite(ASTNode* expr) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = NODE_WRITE;
+    node->data.expr = expr;
+    return node;
+}
+
+/* Create a writeln statement node */
+ASTNode* createWriteln() {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = NODE_WRITELN;
+    return node;
+}
+
 /* UPDATED: Create an array declaration node */
 ASTNode* createArrayDecl(DataType type, char* name, int size) {
     ASTNode* node = malloc(sizeof(ASTNode));
@@ -188,6 +203,15 @@ ASTNode* createIf(ASTNode* condition, ASTNode* then_branch, ASTNode* else_branch
     return node;
 }
 
+/* Create a while loop node */
+ASTNode* createWhile(ASTNode* condition, ASTNode* body) {
+    ASTNode* node = malloc(sizeof(ASTNode));
+    node->type = NODE_WHILE;
+    node->data.while_stmt.condition = condition;
+    node->data.while_stmt.body = body;
+    return node;
+}
+
 /* Create a relational operation node */
 ASTNode* createRelOp(char* op, ASTNode* left, ASTNode* right) {
     ASTNode* node = malloc(sizeof(ASTNode));
@@ -252,6 +276,13 @@ void printAST(ASTNode* node, int level) {
         case NODE_PRINT:
             printf("PRINT\n");
             printAST(node->data.expr, level + 1);
+            break;
+        case NODE_WRITE:
+            printf("WRITE\n");
+            printAST(node->data.expr, level + 1);
+            break;
+        case NODE_WRITELN:
+            printf("WRITELN\n");
             break;
         case NODE_STMT_LIST:
             printAST(node->data.stmtlist.stmt, level);
@@ -326,6 +357,15 @@ void printAST(ASTNode* node, int level) {
                 printf("Else:\n");
                 printAST(node->data.if_stmt.else_branch, level + 2);
             }
+            break;
+        case NODE_WHILE:
+            printf("WHILE\n");
+            for (int i = 0; i < level + 1; i++) printf("  ");
+            printf("Condition:\n");
+            printAST(node->data.while_stmt.condition, level + 2);
+            for (int i = 0; i < level + 1; i++) printf("  ");
+            printf("Body:\n");
+            printAST(node->data.while_stmt.body, level + 2);
             break;
         case NODE_RELOP:
             printf("RELOP: %s\n", node->data.relop.op);

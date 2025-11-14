@@ -29,6 +29,7 @@ extern TACList optimizedList; // The TAC list from tac.c
 // Simple register management for temporary values
 int intReg = 0;   // Current integer temp register ($t0-$t9)
 int floatReg = 0; // Current float temp register ($f0-$f11)
+int labelCounter = 0; // For unique label generation
 
 // List to store float literals for the .data section
 typedef struct FloatLiteral {
@@ -367,6 +368,31 @@ void generateMIPS(const char* filename) {
                 fprintf(output, "    syscall\n");
                 free(r1);
                 // Print newline
+                fprintf(output, "    la $a0, newline\n");
+                fprintf(output, "    li $v0, 4\n");
+                fprintf(output, "    syscall\n");
+                break;
+            }
+            case TAC_WRITE: { // Write Integer or Character (no newline)
+                char* r1 = load_int_arg(curr->arg1);
+                fprintf(output, "    move $a0, %s\n", r1);
+                // Check if it's a character (< 256) or integer
+                fprintf(output, "    li $t9, 256\n");
+                fprintf(output, "    blt $a0, $t9, write_char_%d\n", labelCounter);
+                // Print as integer
+                fprintf(output, "    li $v0, 1\n");
+                fprintf(output, "    syscall\n");
+                fprintf(output, "    j write_done_%d\n", labelCounter);
+                fprintf(output, "write_char_%d:\n", labelCounter);
+                // Print as character
+                fprintf(output, "    li $v0, 11\n");
+                fprintf(output, "    syscall\n");
+                fprintf(output, "write_done_%d:\n", labelCounter);
+                labelCounter++;
+                free(r1);
+                break;
+            }
+            case TAC_WRITELN: { // Write newline
                 fprintf(output, "    la $a0, newline\n");
                 fprintf(output, "    li $v0, 4\n");
                 fprintf(output, "    syscall\n");

@@ -311,6 +311,17 @@ void generateTAC(ASTNode* node) {
             break;
         }
         
+        case NODE_WRITE: {
+            char* expr = generateTACExpr(node->data.expr);
+            appendTAC(createTAC(TAC_WRITE, expr, NULL, NULL));
+            break;
+        }
+        
+        case NODE_WRITELN: {
+            appendTAC(createTAC(TAC_WRITELN, NULL, NULL, NULL));
+            break;
+        }
+        
         case NODE_STMT_LIST:
             generateTAC(node->data.stmtlist.stmt);
             generateTAC(node->data.stmtlist.next);
@@ -319,6 +330,15 @@ void generateTAC(ASTNode* node) {
             /* Mark function begin and label */
             appendTAC(createTAC(TAC_FUNC_BEGIN, NULL, NULL, node->data.func_decl.name));
             appendTAC(createTAC(TAC_LABEL, NULL, NULL, node->data.func_decl.name));
+            
+            /* Process parameters - add them to symbol table as local variables */
+            ASTNode* param = node->data.func_decl.params;
+            while (param) {
+                addVar(param->data.param_list.name, TYPE_INT);
+                appendTAC(createTAC(TAC_DECL, NULL, NULL, param->data.param_list.name));
+                param = param->data.param_list.next;
+            }
+            
             /* Generate TAC for the body */
             generateTAC(node->data.func_decl.body);
             appendTAC(createTAC(TAC_FUNC_END, NULL, NULL, node->data.func_decl.name));
@@ -391,6 +411,31 @@ void generateTAC(ASTNode* node) {
             }
             break;
         }
+        
+        case NODE_WHILE: {
+            /* Generate TAC for while loop with proper control flow */
+            char* startLabel = newLabel();
+            char* endLabel = newLabel();
+            
+            /* Start label - beginning of loop */
+            appendTAC(createTAC(TAC_LABEL, NULL, NULL, startLabel));
+            
+            /* Evaluate condition */
+            char* condTemp = generateTACExpr(node->data.while_stmt.condition);
+            
+            /* If condition is false, jump to end */
+            appendTAC(createTAC(TAC_IF_FALSE, condTemp, NULL, endLabel));
+            
+            /* Generate loop body */
+            generateTAC(node->data.while_stmt.body);
+            
+            /* Jump back to start */
+            appendTAC(createTAC(TAC_GOTO, NULL, NULL, startLabel));
+            
+            /* End label */
+            appendTAC(createTAC(TAC_LABEL, NULL, NULL, endLabel));
+            break;
+        }
             
         default:
             break;
@@ -453,6 +498,14 @@ void printTAC() {
             case TAC_PRINT:
                 printf("PRINT %s", curr->arg1);
                 printf("           // Output int value of %s\n", curr->arg1);
+                break;
+            case TAC_WRITE:
+                printf("WRITE %s", curr->arg1);
+                printf("           // Output value of %s (no newline)\n", curr->arg1);
+                break;
+            case TAC_WRITELN:
+                printf("WRITELN");
+                printf("           // Output newline\n");
                 break;
             case TAC_FPRINT:
                 printf("FPRINT %s", curr->arg1);
@@ -800,6 +853,24 @@ void optimizeTAC() {
                 break;
             }
 
+            case TAC_WRITE: {
+                char* value = curr->arg1;
+                
+                for (int i = valueCount - 1; i >= 0; i--) {
+                    if (strcmp(values[i].var, value) == 0) {
+                        value = values[i].value;
+                        break;
+                    }
+                }
+                
+                newInstr = createTAC(TAC_WRITE, value, NULL, NULL);
+                break;
+            }
+
+            case TAC_WRITELN:
+                newInstr = createTAC(TAC_WRITELN, NULL, NULL, NULL);
+                break;
+
             case TAC_DECL_ARRAY:
                 newInstr = createTAC(TAC_DECL_ARRAY, curr->arg1, NULL, curr->result);
                 break;
@@ -990,6 +1061,12 @@ void printOptimizedTAC() {
                 break;
             case TAC_PRINT:
                 printf("PRINT %s\n", curr->arg1);
+                break;
+            case TAC_WRITE:
+                printf("WRITE %s\n", curr->arg1);
+                break;
+            case TAC_WRITELN:
+                printf("WRITELN\n");
                 break;
             case TAC_FPRINT:
                 printf("FPRINT %s\n", curr->arg1);
